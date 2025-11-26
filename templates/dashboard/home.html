@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Rumo1M{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <div class="stat-card">
+            <div class="stat-value">R$ {{ total|floatformat:2 }}</div>
+            <div class="stat-label">Total Investido</div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="stat-card">
+            <div class="stat-value">{{ qtd_aportes }}</div>
+            <div class="stat-label">Aportes Realizados</div>
+        </div>
+    </div>
+</div>
+
+<div class="alert alert-info fs-5">
+    💡 Próximo aporte sugerido: <b>R$ {{ proximo_sugerido }}</b>
+</div>
+
+<canvas id="grafico"></canvas>
+
+<!-- Lista de Aportes -->
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-4">
+            <i class="bi bi-clock-history"></i> Últimos Aportes
+        </h5>
+        
+        {% if aportes %}
+            {% for aporte in aportes %}
+            <div class="aporte-item">
+                <div>
+                    <div class="aporte-valor">R$ {{ aporte.valor|floatformat:2 }}</div>
+                    <div class="aporte-data">
+                        {{ aporte.data|date:"d/m/Y" }}
+                        {% if aporte.descricao %}
+                        <span class="text-muted">· {{ aporte.descricao }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <a href="{% url 'editar_aporte' aporte.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'deletar_aporte' aporte.pk %}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
+                <p class="text-muted mt-3">Nenhum aporte ainda</p>
+                <p class="text-muted">Adicione seu primeiro aporte para começar!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Floating Action Button -->
+<a href="{% url 'adicionar_aporte' %}" class="floating-btn">
+    <i class="bi bi-plus-lg"></i>
+</a>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ctx = document.getElementById('grafico');
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [...Array({{ historico_corrigido|length }}).keys()].map(i=>`Mês ${i+1}`),
+        datasets: [
+            { label: "Histórico corrigido", data: {{ historico_corrigido|safe }} },
+            { label: "Projeção futura", data: {{ projecao|safe }} }
+        ]
+    }
+});
+</script>
+{% endblock %}
