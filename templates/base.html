@@ -174,6 +174,196 @@
                 font-size: 1.25rem;
             }
         }
+        
+        /* Badges de Progresso */
+        .badge-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .badge-card {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .badge-alcancado {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border: 3px solid var(--primary);
+        }
+        
+        .badge-proximo {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        }
+        
+        .badge-final {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 4px solid #f59e0b;
+            flex-basis: 100%;
+        }
+        
+        .badge-emoji {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+        
+        .badge-emoji-gray {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 10px;
+            opacity: 0.3;
+            filter: grayscale(100%);
+        }
+        
+        .badge-emoji-huge {
+            font-size: 6rem;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: rotate 3s infinite;
+        }
+        
+        .badge-content {
+            text-align: center;
+        }
+        
+        .badge-titulo {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .badge-titulo-huge {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #f59e0b;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        
+        .badge-titulo-small {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .badge-titulo-proximo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        
+        .badge-mensagem {
+            font-size: 1.125rem;
+            color: #047857;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .badge-mensagem-huge {
+            font-size: 1.5rem;
+            color: #d97706;
+            font-weight: 600;
+        }
+        
+        .badge-mensagem-small {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        
+        .badge-valor {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        
+        .badge-valor-proximo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+        
+        .badge-check {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2.5rem;
+            color: var(--primary);
+            animation: pulse 2s infinite;
+        }
+        
+        .badge-progress {
+            margin-top: 15px;
+        }
+        
+        .badge-progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.875rem;
+        }
+        
+        .animate-badge {
+            animation: slideIn 0.6s ease-out;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        @keyframes rotate {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .badge-container {
+                flex-direction: column;
+            }
+            .badge-card {
+                min-width: 100%;
+            }
+            .badge-emoji {
+                font-size: 3rem;
+            }
+            .badge-titulo {
+                font-size: 1.5rem;
+            }
+            .badge-titulo-huge {
+                font-size: 2rem;
+            }
+        }
     </style>
     
     {% block extra_css %}{% endblock %}

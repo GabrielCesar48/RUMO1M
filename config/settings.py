@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -117,3 +117,7 @@ USE_L10N = True
 USE_THOUSAND_SEPARATOR = True
 DECIMAL_SEPARATOR = ','
 THOUSAND_SEPARATOR = '.'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.dev',   # é o domínio que o seu túnel está usando
+]

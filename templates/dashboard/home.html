@@ -5,25 +5,106 @@
 {% block content %}
 <!-- Stats Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-6">
+    <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="stat-value">R$ {{ total|floatformat:2 }}</div>
             <div class="stat-label">Total Investido</div>
         </div>
     </div>
-    <div class="col-6">
+    <div class="col-6 col-md-3">
         <div class="stat-card">
             <div class="stat-value">{{ qtd_aportes }}</div>
             <div class="stat-label">Aportes Realizados</div>
         </div>
     </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">R$ {{ media_mensal|floatformat:2 }}</div>
+            <div class="stat-label">Média Mensal</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-value">R$ {{ maior_aporte|floatformat:2 }}</div>
+            <div class="stat-label">Maior Aporte</div>
+        </div>
+    </div>
 </div>
 
-<div class="alert alert-info fs-5">
-    💡 Próximo aporte sugerido: <b>R$ {{ proximo_sugerido }}</b>
+<!-- Próximo Aporte Sugerido -->
+{% if proximo_valor %}
+    <div class="alert alert-info fs-5 mb-4">
+        💡 Próximo aporte sugerido: <b>R$ {{ proximo_valor|floatformat:2 }}</b>
+    </div>
+{% elif proximo_mensagem %}
+    <div class="alert alert-warning fs-6 mb-4">
+        <i class="bi bi-exclamation-triangle"></i> {{ proximo_mensagem }}
+    </div>
+{% endif %}
+
+<!-- Badge de Progresso -->
+<div class="badge-container mb-4">
+    {% if badges.atual %}
+    <div class="badge-card badge-alcancado animate-badge">
+        <div class="badge-emoji">{{ badges.atual.emoji }}</div>
+        <div class="badge-content">
+            <h3 class="badge-titulo">{{ badges.atual.titulo }}</h3>
+            <p class="badge-mensagem">{{ badges.atual.mensagem }}</p>
+            <div class="badge-valor">R$ {{ badges.atual.valor|floatformat:0 }}</div>
+        </div>
+        <div class="badge-check">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if not badges.proximo.alcancado %}
+    <div class="badge-card badge-proximo">
+        <div class="badge-emoji-gray">{{ badges.proximo.emoji }}</div>
+        <div class="badge-content">
+            <h3 class="badge-titulo-small">Próximo Marco</h3>
+            <h4 class="badge-titulo-proximo">{{ badges.proximo.titulo }}</h4>
+            <p class="badge-mensagem-small">{{ badges.proximo.mensagem }}</p>
+            <div class="badge-valor-proximo">R$ {{ badges.proximo.valor|floatformat:0 }}</div>
+        </div>
+        <div class="badge-progress">
+            <div class="progress" style="height: 10px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-{{ badges.proximo.cor }}" 
+                     role="progressbar" 
+                     style="width: {{ badges.progresso }}%"
+                     aria-valuenow="{{ badges.progresso }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                </div>
+            </div>
+            <div class="badge-progress-text">
+                <span><strong>{{ badges.progresso }}%</strong> completo</span>
+                <span class="text-muted">Faltam: <strong>R$ {{ badges.falta|floatformat:2 }}</strong></span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="badge-card badge-final animate-badge">
+        <div class="badge-emoji-huge">👑</div>
+        <div class="badge-content text-center">
+            <h2 class="badge-titulo-huge">VOCÊ CONQUISTOU O MILHÃO!</h2>
+            <p class="badge-mensagem-huge">Parabéns pela disciplina e determinação! 🎊</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
-<canvas id="grafico"></canvas>
+<!-- Gráfico -->
+<div class="card mb-4">
+    <div class="card-body p-2 p-md-4">
+        <h5 class="card-title mb-3 px-2">
+            <i class="bi bi-graph-up"></i> Evolução Patrimonial
+        </h5>
+        <div class="chart-container">
+            <canvas id="grafico"></canvas>
+        </div>
+    </div>
+</div>
 
 <!-- Lista de Aportes -->
 <div class="card">
@@ -72,17 +153,210 @@
 
 {% block extra_js %}
 <script>
+// Dados do backend
+const historico = {{ historico_acumulado|safe }};
+const projecaoConservador = {{ projecao_conservador|safe }};
+const projecaoModerado = {{ projecao_moderado|safe }};
+const projecaoAgressivo = {{ projecao_agressivo|safe }};
+
+console.log('Histórico:', historico);
+console.log('Conservador:', projecaoConservador);
+console.log('Moderado:', projecaoModerado);
+console.log('Agressivo:', projecaoAgressivo);
+
+// Preparar labels
+const mesesHistorico = historico.length;
+const mesesProjecao = projecaoConservador.length;
+const totalMeses = mesesHistorico + mesesProjecao;
+
+const labels = [];
+for (let i = 1; i <= totalMeses; i++) {
+    labels.push(i);
+}
+
+// Preparar datasets
+// Histórico: valores reais acumulados até o último mês
+const dataHistorico = [...historico].concat(Array(mesesProjecao).fill(null));
+
+// Projeções: null até o fim do histórico, depois os valores
+const dataConservador = Array(mesesHistorico).fill(null).concat(projecaoConservador);
+const dataModerado = Array(mesesHistorico).fill(null).concat(projecaoModerado);
+const dataAgressivo = Array(mesesHistorico).fill(null).concat(projecaoAgressivo);
+
+console.log('Data Histórico:', dataHistorico.filter(v => v !== null).length, 'valores');
+console.log('Data Conservador:', dataConservador.filter(v => v !== null).length, 'valores');
+
+// Criar gráfico
 const ctx = document.getElementById('grafico');
 
-new Chart(ctx, {
+// Configurações responsivas
+const isMobile = window.innerWidth < 768;
+const config = {
     type: 'line',
     data: {
-        labels: [...Array({{ historico_corrigido|length }}).keys()].map(i=>`Mês ${i+1}`),
+        labels: labels,
         datasets: [
-            { label: "Histórico corrigido", data: {{ historico_corrigido|safe }} },
-            { label: "Projeção futura", data: {{ projecao|safe }} }
+            {
+                label: isMobile ? '💰 Acumulado' : '💰 Patrimônio Acumulado',
+                data: dataHistorico,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: isMobile ? 3 : 4,
+                tension: 0.3,
+                fill: true,
+                pointRadius: isMobile ? 0 : 5,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#10b981',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+            },
+            {
+                label: isMobile ? '🟢 8%' : '🟢 Conservador (8% a.a.)',
+                data: dataConservador,
+                borderColor: '#22c55e',
+                backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                borderWidth: isMobile ? 2 : 3,
+                borderDash: [10, 5],
+                tension: 0.4,
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#22c55e',
+            },
+            {
+                label: isMobile ? '🟡 12%' : '🟡 Moderado (12% a.a.)',
+                data: dataModerado,
+                borderColor: '#eab308',
+                backgroundColor: 'rgba(234, 179, 8, 0.05)',
+                borderWidth: isMobile ? 2 : 3,
+                borderDash: [10, 5],
+                tension: 0.4,
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#eab308',
+            },
+            {
+                label: isMobile ? '🔴 14%' : '🔴 Agressivo (14% a.a.)',
+                data: dataAgressivo,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                borderWidth: isMobile ? 2 : 3,
+                borderDash: [10, 5],
+                tension: 0.4,
+                fill: false,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#ef4444',
+            }
         ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: isMobile ? 5 : 15,
+                    font: {
+                        size: isMobile ? 9 : 12,
+                        weight: 'bold'
+                    },
+                    boxWidth: isMobile ? 8 : 12,
+                    boxHeight: isMobile ? 8 : 12
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                padding: isMobile ? 8 : 12,
+                cornerRadius: 10,
+                titleFont: {
+                    size: isMobile ? 12 : 14,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    size: isMobile ? 11 : 13
+                },
+                callbacks: {
+                    title: function(context) {
+                        const mes = context[0].label;
+                        const anos = Math.floor(mes / 12);
+                        const meses = mes % 12;
+                        if (anos > 0) {
+                            return `${anos}a ${meses}m`;
+                        }
+                        return `${meses} mês${meses !== 1 ? 'es' : ''}`;
+                    },
+                    label: function(context) {
+                        if (context.parsed.y !== null) {
+                            const valor = context.parsed.y.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL',
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0
+                            });
+                            return isMobile ? valor : `${context.dataset.label}: ${valor}`;
+                        }
+                        return '';
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: isMobile ? 4 : 12,
+                    font: {
+                        size: isMobile ? 8 : 11
+                    },
+                    callback: function(value) {
+                        const mes = this.getLabelForValue(value);
+                        if (mes % 12 === 0) {
+                            return `${mes / 12}a`;
+                        }
+                        return '';
+                    }
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                },
+                ticks: {
+                    callback: function(value) {
+                        if (value >= 1000000) {
+                            return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
+                        } else if (value >= 1000) {
+                            return isMobile ? (value / 1000).toFixed(0) + 'k' : 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                        }
+                        return isMobile ? value.toFixed(0) : 'R$ ' + value.toFixed(0);
+                    },
+                    font: {
+                        size: isMobile ? 8 : 11
+                    },
+                    maxTicksLimit: isMobile ? 5 : 8
+                }
+            }
+        },
+        interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+        }
     }
-});
+};
+
+new Chart(ctx, config);
 </script>
 {% endblock %}

@@ -10,9 +10,11 @@ from decimal import Decimal
 def buscar_ipca(ano, mes, tentativas_max=12):
     """
     Busca o IPCA para (ano, mes) consultando o BCB e validando a data de cada item.
-    Retorna Decimal(0.00) se não encontrar dentro das tentativas.
+    Retorna Decimal ou None se não encontrar dentro das tentativas.
+    
+    IMPORTANTE: Retorna None se o mês solicitado não tiver IPCA disponível,
+    mesmo que a API retorne dados de meses anteriores.
     """
-
     tentativas = 0
     ano_busca, mes_busca = ano, mes
     
@@ -21,29 +23,28 @@ def buscar_ipca(ano, mes, tentativas_max=12):
     while tentativas < tentativas_max:
         # Formato DD/MM/YYYY — o BCB aceita
         url = (
-                f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?"
-                f"formato=json&dataInicial=01/{mes_busca:02d}/{ano_busca}&dataFinal={ultimo_dia:02d}/{mes_busca:02d}/{ano_busca}"
-            )
+            f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?"
+            f"formato=json&dataInicial=01/{mes_busca:02d}/{ano_busca}&dataFinal={ultimo_dia:02d}/{mes_busca:02d}/{ano_busca}"
+        )
+        
         try:
             resp = requests.get(url, timeout=6).json()
         except Exception as e:
-            # erro de rede/parsing → aborta e retorna 0
             print(f"[ERRO REQ IPCA] {ano_busca}-{mes_busca}: {e}")
-            return Decimal("0.00")
+            return None
 
-        # valida se veio lista
+        # Valida se veio lista
         if not isinstance(resp, list) or len(resp) == 0:
-            # retrocede um mês e tenta de novo
+            # Se não veio lista ou veio vazia, retrocede e tenta de novo
             dt = date(ano_busca, mes_busca, 1) - relativedelta(months=1)
             ano_busca, mes_busca = dt.year, dt.month
             tentativas += 1
             continue
 
-        # filtragem explícita: pegar apenas itens cujo campo "data" pertence ao mês/ano desejado
+        # Filtragem explícita: pegar apenas itens cujo campo "data" pertence ao mês/ano SOLICITADO
         itens_mes = []
         for item in resp:
             d = item.get("data", "")
-            # espera formato "DD/MM/YYYY"
             try:
                 dia_s, mes_s, ano_s = d.split("/")
                 ano_i = int(ano_s)
@@ -51,32 +52,24 @@ def buscar_ipca(ano, mes, tentativas_max=12):
             except Exception:
                 continue
 
+            # IMPORTANTE: Só aceita se for EXATAMENTE o mês/ano SOLICITADO (não o de busca)
             if ano_i == ano and mes_i == mes:
                 itens_mes.append(item)
 
-        # se achar linhas exatamente do mês/ano pedido, usa a última dessas linhas
+        # Se achar linhas exatamente do mês/ano SOLICITADO, usa a última
         if itens_mes:
             valor_str = itens_mes[-1].get("valor", "0").replace(",", ".")
             try:
                 return Decimal(valor_str) / 100
             except Exception:
-                # parse falhou → fallback a zero
-                return Decimal("0.00")
+                return None
 
-        # se não encontrou item exatamente do (ano,mes) (estranho), pega a última linha retornada
-        # mas loga para debug — geralmente isso não deve acontecer
-        try:
-            valor_fallback = resp[-1].get("valor", "0").replace(",", ".")
-            print(f"[WARN] Resp BCB retornou registros mas nenhum com {mes:02d}/{ano}. Usando último: {valor_fallback}")
-            return Decimal(valor_fallback) / 100
-        except Exception:
-            # tudo falhou → retrocede e tenta novamente
-            dt = date(ano_busca, mes_busca, 1) - relativedelta(months=1)
-            ano_busca, mes_busca = dt.year, dt.month
-            tentativas += 1
-            continue
+        # Se não encontrou item exatamente do (ano, mes) SOLICITADO:
+        # NÃO usa fallback! Retorna None para indicar que não tem IPCA disponível
+        print(f"[INFO] IPCA de {mes:02d}/{ano} ainda não disponível no BCB.")
+        return None
 
-    # se passou todas as tentativas → retorna 0
+    # Se passou todas as tentativas → retorna None
     print(f"[ERRO IPCA] Não encontrou IPCA para {mes}/{ano} após retroceder {tentativas_max} meses.")
     return None
 
@@ -150,20 +143,37 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 
 def calcular_proximo_aporte(aportes):
+    """
+    Calcula o próximo aporte sugerido aplicando IPCA do MÊS ATUAL ao último aporte.
+    
+    Lógica:
+    - Se último aporte foi em OUT/2025, próximo será em NOV/2025
+    - Para calcular valor de NOV/2025, aplica IPCA de OUT/2025 (mês do último aporte)
+    - IPCA de OUT/2025 já está disponível (divulgado em ~15/NOV)
+    
+    - Se último aporte foi em NOV/2025, próximo será em DEZ/2025
+    - Para calcular valor de DEZ/2025, aplica IPCA de NOV/2025 (mês do último aporte)
+    - IPCA de NOV/2025 só será divulgado em ~15/DEZ
+    
+    Retorna:
+        float: valor sugerido para o próximo aporte
+        None: se o IPCA do mês do último aporte ainda não foi divulgado
+    """
     aportes = aportes.order_by("data")
     ultimo = aportes.last()
-
+    
     valor_base = Decimal(ultimo.valor)
-
-    # determina o mês do próximo aporte
-    prox = ultimo.data + relativedelta(months=1)
-    ano, mes = prox.year, prox.month
-
-    # tenta buscar IPCA desse mês
-    ipca = buscar_ipca(ano, mes)
-
+    
+    # O IPCA que precisamos é do MÊS DO ÚLTIMO APORTE, não do próximo mês!
+    ano_ipca = ultimo.data.year
+    mes_ipca = ultimo.data.month
+    
+    # Tenta buscar IPCA do mês do último aporte
+    ipca = buscar_ipca(ano_ipca, mes_ipca)
+    
     if ipca is None or ipca == 0:
+        # IPCA do mês ainda não foi divulgado
         return None
-
-    # se tiver IPCA → corrige
+    
+    # Se tiver IPCA → corrige
     return round(float(valor_base * (1 + ipca)), 2)
