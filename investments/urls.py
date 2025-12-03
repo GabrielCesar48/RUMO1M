@@ -5,4 +5,8 @@ urlpatterns = [
     path('adicionar/', views.adicionar_aporte, name='adicionar_aporte'),
     path('editar/<int:pk>/', views.editar_aporte, name='editar_aporte'),
     path('deletar/<int:pk>/', views.deletar_aporte, name='deletar_aporte'),
+    
+    path('api/buscar-ativos/', views.buscar_ativos_api, name='buscar_ativos_api'),
+    path('api/buscar-cotacao/', views.buscar_cotacao_api, name='buscar_cotacao_api'),
+    path('api/salvar-lancamentos/', views.salvar_lancamentos, name='salvar_lancamentos'),
 ]

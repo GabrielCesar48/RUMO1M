@@ -94,6 +94,115 @@
     {% endif %}
 </div>
 
+<!-- Carteira de Investimentos -->
+{% if tem_carteira %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-4">
+            <i class="bi bi-wallet2"></i> Minha Carteira
+        </h5>
+        
+        <!-- KPIs da Carteira -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value">R$ {{ total_investido_carteira|floatformat:2 }}</div>
+                    <div class="stat-label">Investido</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value">R$ {{ total_mercado_carteira|floatformat:2 }}</div>
+                    <div class="stat-label">Valor Atual</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value {% if lucro_total >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {% if lucro_total >= 0 %}+{% endif %}R$ {{ lucro_total|floatformat:2 }}
+                    </div>
+                    <div class="stat-label">Lucro/Prejuízo</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="stat-card">
+                    <div class="stat-value {% if rentabilidade >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {% if rentabilidade >= 0 %}+{% endif %}{{ rentabilidade|floatformat:2 }}%
+                    </div>
+                    <div class="stat-label">Rentabilidade</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posições -->
+        <h6 class="mb-3">Posições Atuais</h6>
+        <div class="row g-3 mb-4">
+            {% for chave, pos in carteira.items %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card" style="border-left: 4px solid {% if pos.lucro_prejuizo >= 0 %}#10b981{% else %}#ef4444{% endif %};">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center mb-2">
+                            {% if pos.logo %}
+                            <img src="{{ pos.logo }}" alt="{{ pos.ticker }}" style="width: 45px; height: 45px; border-radius: 8px; margin-right: 12px; object-fit: contain; background: #f3f4f6; padding: 5px;">
+                            {% else %}
+                            <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                {{ pos.ticker|slice:":2"|default:"--" }}
+                            </div>
+                            {% endif %}
+                            <div style="flex: 1; min-width: 0;">
+                                <strong style="font-size: 1.1rem;">{{ pos.ticker|default:pos.nome|truncatechars:10 }}</strong><br>
+                                <small class="text-muted" style="font-size: 0.75rem;">{{ pos.nome|truncatechars:20 }}</small>
+                            </div>
+                        </div>
+                        <div class="mt-2" style="font-size: 0.85rem;">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Quantidade:</span>
+                                <strong>{{ pos.quantidade|floatformat:2 }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Preço Médio:</span>
+                                <strong>R$ {{ pos.valor_medio|floatformat:2 }}</strong>
+                            </div>
+                            {% if pos.preco_atual %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Preço Atual:</span>
+                                <strong>R$ {{ pos.preco_atual|floatformat:2 }}</strong>
+                            </div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">Total Investido:</span>
+                                <strong>R$ {{ pos.valor_total|floatformat:2 }}</strong>
+                            </div>
+                            {% if pos.valor_mercado %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Valor Atual:</span>
+                                <strong>R$ {{ pos.valor_mercado|floatformat:2 }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid #e5e7eb;">
+                                <span class="text-muted">L/P:</span>
+                                <strong class="{% if pos.lucro_prejuizo >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {% if pos.lucro_prejuizo >= 0 %}+{% endif %}R$ {{ pos.lucro_prejuizo|floatformat:2 }} ({% if pos.rentabilidade >= 0 %}+{% endif %}{{ pos.rentabilidade|floatformat:1 }}%)
+                                </strong>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Gráfico de Diversificação -->
+        {% if diversificacao %}
+        <h6 class="mb-3">Diversificação da Carteira</h6>
+        <div style="max-height: 350px; position: relative;">
+            <canvas id="graficoDiversificacao"></canvas>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <!-- Gráfico -->
 <div class="card mb-4">
     <div class="card-body p-2 p-md-4">
@@ -106,44 +215,53 @@
     </div>
 </div>
 
-<!-- Lista de Aportes -->
+<!-- Lista de Últimas Movimentações -->
 <div class="card">
     <div class="card-body">
         <h5 class="card-title mb-4">
-            <i class="bi bi-clock-history"></i> Últimos Aportes
+            <i class="bi bi-clock-history"></i> Últimas Movimentações
         </h5>
         
-        {% if aportes %}
-            {% for aporte in aportes %}
+        {% if ultimos_items %}
+            {% for item in ultimos_items %}
             <div class="aporte-item">
                 <div>
-                    <div class="aporte-valor">R$ {{ aporte.valor|floatformat:2 }}</div>
+                    <div class="aporte-valor">
+                        {% if item.is_aporte %}
+                            💰 Aporte - R$ {{ item.valor|floatformat:2 }}
+                        {% else %}
+                            {% if item.tipo == 'Compra' %}🟢{% else %}🔴{% endif %} {{ item.tipo }} - R$ {{ item.valor|floatformat:2 }}
+                        {% endif %}
+                    </div>
                     <div class="aporte-data">
-                        {{ aporte.data|date:"d/m/Y" }}
-                        {% if aporte.descricao %}
-                        <span class="text-muted">· {{ aporte.descricao }}</span>
+                        {{ item.data|date:"d/m/Y" }}
+                        {% if item.descricao %}
+                        <span class="text-muted">· {{ item.descricao }}</span>
                         {% endif %}
                     </div>
                 </div>
                 <div>
-                    <a href="{% url 'editar_aporte' aporte.pk %}" class="btn btn-sm btn-outline-secondary me-1">
+                    {% if item.is_aporte %}
+                    <a href="{% url 'editar_aporte' item.id %}" class="btn btn-sm btn-outline-secondary me-1">
                         <i class="bi bi-pencil"></i>
                     </a>
-                    <a href="{% url 'deletar_aporte' aporte.pk %}" class="btn btn-sm btn-outline-danger">
+                    <a href="{% url 'deletar_aporte' item.id %}" class="btn btn-sm btn-outline-danger">
                         <i class="bi bi-trash"></i>
                     </a>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
         {% else %}
             <div class="text-center py-5">
                 <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
-                <p class="text-muted mt-3">Nenhum aporte ainda</p>
-                <p class="text-muted">Adicione seu primeiro aporte para começar!</p>
+                <p class="text-muted mt-3">Nenhuma movimentação ainda</p>
+                <p class="text-muted">Adicione seu primeiro investimento para começar!</p>
             </div>
         {% endif %}
     </div>
 </div>
+
 
 <!-- Floating Action Button -->
 <a href="{% url 'adicionar_aporte' %}" class="floating-btn">
@@ -359,4 +477,64 @@ const config = {
 
 new Chart(ctx, config);
 </script>
+
+{% if diversificacao %}
+<script>
+const ctxDiv = document.getElementById('graficoDiversificacao');
+const diversificacaoData = {
+    {% for tipo, data in diversificacao.items %}
+    "{{ tipo }}": {{ data.percentual }},
+    {% endfor %}
+};
+
+const labels = [];
+const valores = [];
+const coresGrafico = [
+    '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', 
+    '#ec4899', '#14b8a6', '#06b6d4', '#84cc16', '#6b7280'
+];
+
+let i = 0;
+for (const tipo in diversificacaoData) {
+    labels.push(tipo);
+    valores.push(diversificacaoData[tipo]);
+}
+
+new Chart(ctxDiv, {
+    type: 'doughnut',
+    data: {
+        labels: labels,
+        datasets: [{
+            data: valores,
+            backgroundColor: coresGrafico,
+            borderWidth: 3,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    font: {
+                        size: window.innerWidth < 768 ? 10 : 12,
+                        weight: 'bold'
+                    }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
 {% endblock %}

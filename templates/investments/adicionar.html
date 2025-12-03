@@ -1,63 +1,563 @@
 {% extends 'base.html' %}
 
-{% block title %}Adicionar Aporte - Rumo1M{% endblock %}
+{% block title %}Adicionar Lançamentos - Rumo1M{% endblock %}
+
+{% block extra_css %}
+<style>
+    .saldo-indicator {
+        font-size: 1.5rem;
+        font-weight: 700;
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    .saldo-positivo { background: #d1fae5; color: #065f46; }
+    .saldo-neutro { background: #fef3c7; color: #92400e; }
+    .saldo-negativo { background: #fee2e2; color: #991b1b; }
+    
+    .lancamento-item {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #10b981;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .lancamento-item.venda {
+        border-left-color: #ef4444;
+    }
+    
+    .autocomplete-results {
+        position: absolute;
+        z-index: 1000;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        width: 100%;
+        margin-top: 5px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .autocomplete-item {
+        padding: 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .autocomplete-item:hover {
+        background: #f9fafb;
+    }
+    
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="row justify-content-center">
-    <div class="col-lg-6">
+    <div class="col-lg-10">
+        <!-- Indicador de Saldo -->
+        <div id="saldoIndicator" class="saldo-indicator saldo-neutro">
+            <div class="mb-1"><small id="statusSaldo">Faltam investir</small></div>
+            <div><strong id="saldoValor">R$ {{ proximo_valor|floatformat:2|default:"0,00" }}</strong></div>
+        </div>
+
+        <!-- Card Principal -->
         <div class="card">
             <div class="card-body p-4">
                 <h4 class="card-title mb-4">
-                    <i class="bi bi-plus-circle"></i> Novo Aporte
+                    <i class="bi bi-plus-circle"></i> Adicionar Lançamentos
                 </h4>
-                
-                <form method="post">
-                    {% csrf_token %}
+
+                <!-- Tipo de Operação -->
+                <div class="btn-group w-100 mb-4" role="group">
+                    <input type="radio" class="btn-check" name="tipoOperacao" id="btnCompra" value="COMPRA" checked>
+                    <label class="btn btn-outline-success btn-lg" for="btnCompra">
+                        <i class="bi bi-cart-plus"></i> Compra
+                    </label>
+
+                    <input type="radio" class="btn-check" name="tipoOperacao" id="btnVenda" value="VENDA">
+                    <label class="btn btn-outline-danger btn-lg" for="btnVenda">
+                        <i class="bi bi-cart-dash"></i> Venda
+                    </label>
+                </div>
+
+                <!-- Tipo de Ativo -->
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Ativo</label>
+                    <select id="tipoAtivo" class="form-select form-select-lg">
+                        <option value="">Selecionar</option>
+                        <option value="ACOES">Ações</option>
+                        <option value="FUNDOS">Fundos de Investimento</option>
+                        <option value="FIIS">FIIs</option>
+                        <option value="CRIPTOMOEDAS">Criptomoedas</option>
+                        <option value="BDRS">BDRs</option>
+                        <option value="ETFS">ETFs</option>
+                        <option value="TESOURO">Tesouro Direto</option>
+                        <option value="RENDA_FIXA">Renda Fixa (CDB/LCI/LCA/LC/LF/RDB)</option>
+                        <option value="OUTROS">Outros</option>
+                    </select>
+                </div>
+
+                <!-- Campos por Tipo de Ativo -->
+                <div id="camposAtivo">
+                    <!-- Campos Dinâmicos Aparecem Aqui -->
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="d-grid gap-2 mt-4">
+                    <button type="button" id="btnAdicionar" class="btn btn-primary btn-lg" disabled>
+                        <i class="bi bi-plus-lg"></i> Adicionar à Lista
+                    </button>
+                </div>
+
+                <!-- Lista de Lançamentos Temporários -->
+                <div id="listaLancamentos" class="mt-4" style="display: none;">
+                    <h5 class="mb-3">Lançamentos a Salvar:</h5>
+                    <div id="lancamentosContainer"></div>
                     
-                    <div class="mb-3">
-                        <label for="{{ form.data.id_for_label }}" class="form-label">
-                            {{ form.data.label }}
-                        </label>
-                        {{ form.data }}
-                        {% if form.data.errors %}
-                            <div class="text-danger mt-2">{{ form.data.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.valor.id_for_label }}" class="form-label">
-                            {{ form.valor.label }}
-                        </label>
-                        <div class="input-group input-group-lg">
-                            <span class="input-group-text">R$</span>
-                            {{ form.valor }}
-                        </div>
-                        {% if form.valor.errors %}
-                            <div class="text-danger mt-2">{{ form.valor.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="{{ form.descricao.id_for_label }}" class="form-label">
-                            {{ form.descricao.label }}
-                        </label>
-                        {{ form.descricao }}
-                        {% if form.descricao.errors %}
-                            <div class="text-danger mt-2">{{ form.descricao.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-check-lg"></i> Adicionar Aporte
+                    <div class="d-grid gap-2 mt-3">
+                        <button type="button" id="btnSalvar" class="btn btn-success btn-lg">
+                            <i class="bi bi-check2-circle"></i> Salvar Todos
                         </button>
                         <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-lg">
                             <i class="bi bi-x-lg"></i> Cancelar
                         </a>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Estado global
+const state = {
+    saldoInicial: parseFloat('{{ proximo_valor|default:0 }}'),
+    saldoRestante: parseFloat('{{ proximo_valor|default:0 }}'),
+    lancamentos: [],
+    autocompleteTimeout: null
+};
+
+// Atualizar indicador de saldo
+function atualizarSaldo() {
+    const indicator = document.getElementById('saldoIndicator');
+    const valorEl = document.getElementById('saldoValor');
+    
+    const saldo = state.saldoRestante;
+    
+    // Mostrar sempre o valor positivo visualmente
+    const valorAbsoluto = Math.abs(saldo);
+    valorEl.textContent = 'R$ ' + valorAbsoluto.toFixed(2).replace('.', ',');
+    
+    // Mudar cor conforme saldo
+    indicator.classList.remove('saldo-positivo', 'saldo-neutro', 'saldo-negativo');
+    if (saldo > 50) {
+        indicator.classList.add('saldo-neutro');
+    } else if (saldo >= -50 && saldo <= 50) {
+        indicator.classList.add('saldo-positivo');
+    } else {
+        indicator.classList.add('saldo-negativo');
+    }
+    
+    // Atualizar texto explicativo
+    let textoStatus = '';
+    if (saldo > 50) {
+        textoStatus = 'Faltam investir';
+    } else if (saldo >= -50 && saldo <= 50) {
+        textoStatus = 'Objetivo atingido! ✅';
+    } else {
+        textoStatus = 'Investiu a mais';
+    }
+    
+    const statusEl = document.getElementById('statusSaldo');
+    if (statusEl) {
+        statusEl.textContent = textoStatus;
+    }
+}
+
+// Gerar campos dinâmicos
+function gerarCampos(tipo) {
+    const container = document.getElementById('camposAtivo');
+    container.innerHTML = '';
+    
+    if (!tipo) {
+        document.getElementById('btnAdicionar').disabled = true;
+        return;
+    }
+    
+    const usaAPI = ['ACOES', 'FUNDOS', 'FIIS', 'CRIPTOMOEDAS', 'BDRS', 'ETFS'].includes(tipo);
+    
+    let html = '';
+    
+    if (usaAPI) {
+        html = '<div class="mb-3 position-relative">';
+        html += '<label class="form-label">Buscar Ativo</label>';
+        html += '<input type="text" id="inputBusca" class="form-control form-control-lg" placeholder="Digite o ticker ou nome...">';
+        html += '<div id="autocompleteResults" class="autocomplete-results" style="display: none;"></div>';
+        html += '<input type="hidden" id="tickerSelecionado">';
+        html += '</div>';
+        html += '<div class="mb-3">';
+        html += '<label class="form-label">Nome do Ativo</label>';
+        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" readonly>';
+        html += '</div>';
+    } else if (tipo === 'TESOURO') {
+        html = '<div class="mb-3">';
+        html += '<label class="form-label">Nome do Título</label>';
+        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" placeholder="Ex: Tesouro Selic 2029">';
+        html += '</div>';
+    } else if (tipo === 'RENDA_FIXA') {
+        html = '<div class="row">';
+        html += '<div class="col-md-6 mb-3">';
+        html += '<label class="form-label">Emissor</label>';
+        html += '<input type="text" id="emissor" class="form-control form-control-lg" placeholder="Ex: Banco Inter">';
+        html += '</div>';
+        html += '<div class="col-md-6 mb-3">';
+        html += '<label class="form-label">Tipo</label>';
+        html += '<select id="tipoRendaFixa" class="form-select form-select-lg">';
+        html += '<option value="CDB">CDB</option>';
+        html += '<option value="LCI">LCI</option>';
+        html += '<option value="LCA">LCA</option>';
+        html += '<option value="LC">LC</option>';
+        html += '<option value="LF">LF</option>';
+        html += '<option value="RDB">RDB</option>';
+        html += '</select></div></div>';
+        html += '<div class="row">';
+        html += '<div class="col-md-6 mb-3">';
+        html += '<label class="form-label">Indexador</label>';
+        html += '<select id="indexador" class="form-select form-select-lg">';
+        html += '<option value="CDI">CDI</option>';
+        html += '<option value="IPCA">IPCA</option>';
+        html += '<option value="PREFIXADO">Prefixado</option>';
+        html += '</select></div>';
+        html += '<div class="col-md-6 mb-3">';
+        html += '<label class="form-label">';
+        html += '<input type="checkbox" id="liquidezDiaria"> Liquidez Diária';
+        html += '</label></div></div>';
+    } else {
+        html = '<div class="mb-3">';
+        html += '<label class="form-label">Nome do Ativo</label>';
+        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" placeholder="Digite o nome...">';
+        html += '</div>';
+    }
+    
+    // Campos comuns
+    const hoje = new Date().toISOString().split('T')[0];
+    const step = tipo === 'CRIPTOMOEDAS' ? '0.00000001' : '1';
+    
+    html += '<div class="row">';
+    html += '<div class="col-md-4 mb-3">';
+    html += '<label class="form-label">Data</label>';
+    html += '<input type="date" id="dataCompra" class="form-control form-control-lg" value="' + hoje + '">';
+    html += '</div>';
+    html += '<div class="col-md-4 mb-3">';
+    html += '<label class="form-label">Quantidade</label>';
+    html += '<input type="number" id="quantidade" class="form-control form-control-lg" step="' + step + '" min="0">';
+    html += '</div>';
+    html += '<div class="col-md-4 mb-3">';
+    html += '<label class="form-label">Preço (R$)</label>';
+    html += '<input type="number" id="preco" class="form-control form-control-lg" step="0.01" min="0">';
+    html += '</div></div>';
+    html += '<div class="row">';
+    html += '<div class="col-md-6 mb-3">';
+    html += '<label class="form-label">Outros Custos (R$)</label>';
+    html += '<input type="number" id="custos" class="form-control form-control-lg" step="0.01" min="0" value="0">';
+    html += '</div>';
+    html += '<div class="col-md-6 mb-3">';
+    html += '<label class="form-label">Valor Total</label>';
+    html += '<input type="text" id="valorTotal" class="form-control form-control-lg" readonly>';
+    html += '</div></div>';
+    
+    if (tipo === 'RENDA_FIXA') {
+        html += '<div class="mb-3" id="campoVencimento">';
+        html += '<label class="form-label">Data de Vencimento</label>';
+        html += '<input type="date" id="dataVencimento" class="form-control form-control-lg">';
+        html += '</div>';
+    }
+    
+    container.innerHTML = html;
+    
+    if (usaAPI) {
+        setupAutocomplete();
+    }
+    setupCalculos();
+    
+    if (tipo === 'RENDA_FIXA') {
+        const liquidezEl = document.getElementById('liquidezDiaria');
+        if (liquidezEl) {
+            liquidezEl.addEventListener('change', function(e) {
+                const vencEl = document.getElementById('dataVencimento');
+                if (vencEl) vencEl.disabled = e.target.checked;
+            });
+        }
+    }
+    
+    document.getElementById('btnAdicionar').disabled = false;
+}
+
+// Autocomplete
+function setupAutocomplete() {
+    const input = document.getElementById('inputBusca');
+    const results = document.getElementById('autocompleteResults');
+    
+    input.addEventListener('input', function(e) {
+        clearTimeout(state.autocompleteTimeout);
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            results.style.display = 'none';
+            return;
+        }
+        
+        state.autocompleteTimeout = setTimeout(async function() {
+            const tipo = document.getElementById('tipoAtivo').value;
+            const url = '/investments/api/buscar-ativos/?q=' + query + '&tipo=' + tipo;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.resultados && data.resultados.length > 0) {
+                    let itemsHtml = '';
+                    for (let i = 0; i < data.resultados.length; i++) {
+                        const r = data.resultados[i];
+                        itemsHtml += '<div class="autocomplete-item" data-ticker="' + r.ticker + '" data-nome="' + r.nome + '">';
+                        itemsHtml += '<strong>' + r.ticker + '</strong> - ' + r.nome;
+                        itemsHtml += '</div>';
+                    }
+                    results.innerHTML = itemsHtml;
+                    results.style.display = 'block';
+                    
+                    document.querySelectorAll('.autocomplete-item').forEach(function(item) {
+                        item.addEventListener('click', function() {
+                            selecionarAtivo(item.dataset.ticker, item.dataset.nome);
+                        });
+                    });
+                } else {
+                    results.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Erro ao buscar ativos:', error);
+            }
+        }, 300);
+    });
+}
+
+async function selecionarAtivo(ticker, nome) {
+    document.getElementById('tickerSelecionado').value = ticker;
+    document.getElementById('nomeAtivo').value = nome;
+    document.getElementById('inputBusca').value = ticker;
+    document.getElementById('autocompleteResults').style.display = 'none';
+    
+    try {
+        const response = await fetch('/investments/api/buscar-cotacao/?ticker=' + ticker);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.preco && data.preco > 0) {
+                document.getElementById('preco').value = data.preco.toFixed(2);
+                calcularTotal();
+            } else {
+                document.getElementById('preco').value = '';
+                document.getElementById('preco').focus();
+            }
+        } else {
+            document.getElementById('preco').value = '';
+            document.getElementById('preco').focus();
+            document.getElementById('preco').placeholder = 'Digite o preço manualmente';
+        }
+    } catch (error) {
+        console.error('Erro ao buscar cotação:', error);
+        document.getElementById('preco').value = '';
+        document.getElementById('preco').focus();
+    }
+}
+
+function setupCalculos() {
+    ['quantidade', 'preco', 'custos'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', calcularTotal);
+    });
+}
+
+function calcularTotal() {
+    const qtd = parseFloat(document.getElementById('quantidade').value) || 0;
+    const preco = parseFloat(document.getElementById('preco').value) || 0;
+    const custos = parseFloat(document.getElementById('custos').value) || 0;
+    
+    const total = (qtd * preco) + custos;
+    document.getElementById('valorTotal').value = 'R$ ' + total.toFixed(2).replace('.', ',');
+}
+
+document.getElementById('btnAdicionar').addEventListener('click', function() {
+    const tipo = document.getElementById('tipoAtivo').value;
+    const tipoOpEl = document.querySelector('input[name="tipoOperacao"]:checked');
+
+    if (!tipoOpEl) {
+        alert("Escolha o tipo da operação (Compra ou Venda)");
+        return;
+    }
+
+    const tipoOp = tipoOpEl.value;
+    
+    const nomeAtivoEl = document.getElementById('nomeAtivo');
+    const qtdEl = document.getElementById('quantidade');
+    const precoEl = document.getElementById('preco');
+
+    // VERIFICA SE OS ELEMENTOS EXISTEM
+    if (!nomeAtivoEl || !qtdEl || !precoEl) {
+        alert('Os campos ainda não foram gerados. Escolha o tipo do ativo primeiro!');
+        return;
+    }
+
+    // DEPOIS VERIFICA SE TÊM VALOR
+    if (!nomeAtivoEl.value || !qtdEl.value || !precoEl.value) {
+        alert('Preencha todos os campos obrigatórios!');
+        return;
+    }
+    
+    const lancamento = {
+        tipo_operacao: tipoOp,
+        tipo_ativo: tipo,
+        ticker: document.getElementById('tickerSelecionado') ? document.getElementById('tickerSelecionado').value : '',
+        nome_ativo: nomeAtivoEl.value,
+        data: document.getElementById('dataCompra').value,
+        quantidade: parseFloat(qtdEl.value),
+        preco: parseFloat(precoEl.value),
+        custos: parseFloat(document.getElementById('custos').value) || 0,
+        total: (parseFloat(qtdEl.value) * parseFloat(precoEl.value)) + (parseFloat(document.getElementById('custos').value) || 0),
+        emissor: document.getElementById('emissor') ? document.getElementById('emissor').value : '',
+        tipo_renda_fixa: document.getElementById('tipoRendaFixa') ? document.getElementById('tipoRendaFixa').value : '',
+        indexador: document.getElementById('indexador') ? document.getElementById('indexador').value : '',
+        data_vencimento: document.getElementById('dataVencimento') ? document.getElementById('dataVencimento').value : null,
+        liquidez_diaria: document.getElementById('liquidezDiaria') ? document.getElementById('liquidezDiaria').checked : false
+    };
+    
+    state.lancamentos.push(lancamento);
+    
+    if (tipoOp === 'COMPRA') {
+        state.saldoRestante -= lancamento.total;
+    } else {
+        state.saldoRestante += lancamento.total;
+    }
+    atualizarSaldo();
+    
+    renderizarLancamentos();
+    limparFormulario();
+});
+
+function renderizarLancamentos() {
+    const container = document.getElementById('lancamentosContainer');
+    const lista = document.getElementById('listaLancamentos');
+    
+    if (state.lancamentos.length === 0) {
+        lista.style.display = 'none';
+        return;
+    }
+    
+    lista.style.display = 'block';
+    let html = '';
+    for (let i = 0; i < state.lancamentos.length; i++) {
+        const l = state.lancamentos[i];
+        const emoji = l.tipo_operacao === 'COMPRA' ? '🟢' : '🔴';
+        const classe = l.tipo_operacao.toLowerCase();
+        html += '<div class="lancamento-item ' + classe + '">';
+        html += '<div class="d-flex justify-content-between align-items-center">';
+        html += '<div>';
+        html += '<strong>' + emoji + ' ' + l.nome_ativo + '</strong><br>';
+        html += '<small>' + l.quantidade + ' x R$ ' + l.preco.toFixed(2) + ' = R$ ' + l.total.toFixed(2) + '</small>';
+        html += '</div>';
+        html += '<button class="btn btn-sm btn-outline-danger" onclick="removerLancamento(' + i + ')">';
+        html += '<i class="bi bi-trash"></i>';
+        html += '</button>';
+        html += '</div></div>';
+    }
+    container.innerHTML = html;
+}
+
+function removerLancamento(index) {
+    const lanc = state.lancamentos[index];
+    
+    if (lanc.tipo_operacao === 'COMPRA') {
+        state.saldoRestante += lanc.total;
+    } else {
+        state.saldoRestante -= lanc.total;
+    }
+    atualizarSaldo();
+    
+    state.lancamentos.splice(index, 1);
+    renderizarLancamentos();
+}
+
+function limparFormulario() {
+    document.getElementById('tipoAtivo').value = '';
+    document.getElementById('camposAtivo').innerHTML = '';
+    document.getElementById('btnAdicionar').disabled = true;
+}
+
+document.getElementById('btnSalvar').addEventListener('click', async function() {
+    if (state.lancamentos.length === 0) {
+        alert('Adicione pelo menos um lançamento!');
+        return;
+    }
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken');
+    
+    if (!csrfToken) {
+        alert('Erro: Token CSRF não encontrado. Recarregue a página.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/investments/api/salvar-lancamentos/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ lancamentos: state.lancamentos })
+        });
+        
+        const data = await response.json();
+        
+        if (data.sucesso) {
+            window.location.href = "{% url 'dashboard' %}";
+        } else {
+            alert('Erro ao salvar: ' + (data.erro || 'Erro desconhecido'));
+        }
+    } catch (error) {
+        console.error('Erro completo:', error);
+        alert('Erro ao salvar: ' + error.message);
+    }
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.getElementById('tipoAtivo').addEventListener('change', function(e) {
+    gerarCampos(e.target.value);
+});
+</script>
 {% endblock %}
