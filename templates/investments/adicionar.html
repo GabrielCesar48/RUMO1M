@@ -217,32 +217,46 @@ function gerarCampos(tipo) {
         html += '</div>';
     } else if (tipo === 'RENDA_FIXA') {
         html = '<div class="row">';
-        html += '<div class="col-md-6 mb-3">';
+        html += '<div class="col-md-4 mb-3">';
         html += '<label class="form-label">Emissor</label>';
         html += '<input type="text" id="emissor" class="form-control form-control-lg" placeholder="Ex: Banco Inter">';
         html += '</div>';
-        html += '<div class="col-md-6 mb-3">';
-        html += '<label class="form-label">Tipo</label>';
+        html += '<div class="col-md-4 mb-3">';
+        html += '<label class="form-label">Tipo de Título</label>';
         html += '<select id="tipoRendaFixa" class="form-select form-select-lg">';
+        html += '<option value="">Selecionar</option>';
         html += '<option value="CDB">CDB</option>';
         html += '<option value="LCI">LCI</option>';
         html += '<option value="LCA">LCA</option>';
         html += '<option value="LC">LC</option>';
         html += '<option value="LF">LF</option>';
         html += '<option value="RDB">RDB</option>';
-        html += '</select></div></div>';
-        html += '<div class="row">';
-        html += '<div class="col-md-6 mb-3">';
+        html += '</select></div>';
+        html += '<div class="col-md-4 mb-3">';
         html += '<label class="form-label">Indexador</label>';
         html += '<select id="indexador" class="form-select form-select-lg">';
+        html += '<option value="">Selecionar</option>';
         html += '<option value="CDI">CDI</option>';
         html += '<option value="IPCA">IPCA</option>';
         html += '<option value="PREFIXADO">Prefixado</option>';
-        html += '</select></div>';
+        html += '</select></div></div>';
+        html += '<div class="row">';
+        html += '<div class="col-md-6 mb-3">';
+        html += '<label class="form-label">Taxa / % CDI</label>';
+        html += '<div class="input-group input-group-lg">';
+        html += '<input type="number" id="taxaCDI" class="form-control" step="0.01" min="0" placeholder="Ex: 100 ou 5.5">';
+        html += '<span class="input-group-text">%</span>';
+        html += '</div>';
+        html += '<small class="text-muted">Ex: 100 = 100% do CDI, 5.5 = 5.5% a.a.</small>';
+        html += '</div>';
         html += '<div class="col-md-6 mb-3">';
         html += '<label class="form-label">';
-        html += '<input type="checkbox" id="liquidezDiaria"> Liquidez Diária';
+        html += '<input type="checkbox" id="liquidezDiaria" class="form-check-input"> Liquidez Diária';
         html += '</label></div></div>';
+        html += '<div class="mb-3">';
+        html += '<label class="form-label">Nome do Ativo (opcional)</label>';
+        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" placeholder="Ex: CDB 100% CDI - Banco Inter">';
+        html += '</div>';
     } else {
         html = '<div class="mb-3">';
         html += '<label class="form-label">Nome do Ativo</label>';
@@ -278,8 +292,8 @@ function gerarCampos(tipo) {
     html += '</div></div>';
     
     if (tipo === 'RENDA_FIXA') {
-        html += '<div class="mb-3" id="campoVencimento">';
-        html += '<label class="form-label">Data de Vencimento</label>';
+        html += '<div class="mb-3">';
+        html += '<label class="form-label">Data de Vencimento (se houver)</label>';
         html += '<input type="date" id="dataVencimento" class="form-control form-control-lg">';
         html += '</div>';
     }
@@ -296,7 +310,10 @@ function gerarCampos(tipo) {
         if (liquidezEl) {
             liquidezEl.addEventListener('change', function(e) {
                 const vencEl = document.getElementById('dataVencimento');
-                if (vencEl) vencEl.disabled = e.target.checked;
+                if (vencEl) {
+                    vencEl.disabled = e.target.checked;
+                    if (e.target.checked) vencEl.value = '';
+                }
             });
         }
     }
@@ -414,16 +431,41 @@ document.getElementById('btnAdicionar').addEventListener('click', function() {
     const qtdEl = document.getElementById('quantidade');
     const precoEl = document.getElementById('preco');
 
-    // VERIFICA SE OS ELEMENTOS EXISTEM
+    // VALIDA SE OS ELEMENTOS EXISTEM
     if (!nomeAtivoEl || !qtdEl || !precoEl) {
         alert('Os campos ainda não foram gerados. Escolha o tipo do ativo primeiro!');
         return;
     }
 
-    // DEPOIS VERIFICA SE TÊM VALOR
-    if (!nomeAtivoEl.value || !qtdEl.value || !precoEl.value) {
+    // VALIDA SE TÊM VALOR
+    if (!nomeAtivoEl.value.trim() || !qtdEl.value || !precoEl.value) {
         alert('Preencha todos os campos obrigatórios!');
         return;
+    }
+
+    // VALIDAÇÕES ESPECÍFICAS PARA RENDA_FIXA
+    if (tipo === 'RENDA_FIXA') {
+        const emissorEl = document.getElementById('emissor');
+        const tipoRendaFixaEl = document.getElementById('tipoRendaFixa');
+        const indexadorEl = document.getElementById('indexador');
+        const taxaCDIEl = document.getElementById('taxaCDI');
+
+        if (!emissorEl || !emissorEl.value.trim()) {
+            alert('Preencha o Emissor');
+            return;
+        }
+        if (!tipoRendaFixaEl || !tipoRendaFixaEl.value) {
+            alert('Selecione o Tipo de Título');
+            return;
+        }
+        if (!indexadorEl || !indexadorEl.value) {
+            alert('Selecione o Indexador');
+            return;
+        }
+        if (!taxaCDIEl || !taxaCDIEl.value) {
+            alert('Preencha a Taxa / % CDI');
+            return;
+        }
     }
     
     const lancamento = {
@@ -439,6 +481,7 @@ document.getElementById('btnAdicionar').addEventListener('click', function() {
         emissor: document.getElementById('emissor') ? document.getElementById('emissor').value : '',
         tipo_renda_fixa: document.getElementById('tipoRendaFixa') ? document.getElementById('tipoRendaFixa').value : '',
         indexador: document.getElementById('indexador') ? document.getElementById('indexador').value : '',
+        taxa_cdi: document.getElementById('taxaCDI') ? parseFloat(document.getElementById('taxaCDI').value) : 0,
         data_vencimento: document.getElementById('dataVencimento') ? document.getElementById('dataVencimento').value : null,
         liquidez_diaria: document.getElementById('liquidezDiaria') ? document.getElementById('liquidezDiaria').checked : false
     };

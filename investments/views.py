@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import Aporte, Lancamento  # ← ADICIONAR Lancamento aqui
+from .models import Aporte, Lancamento
 from .forms import AporteForm
 import requests
 from decimal import Decimal
+from django.views.decorators.http import require_http_methods
 
 @login_required
 def adicionar_aporte(request):
@@ -153,6 +154,18 @@ def salvar_lancamentos(request):
         
         lancamentos_salvos = []
         for lanc in lancamentos_data:
+            # Tratar taxa_cdi
+            indexador = lanc.get('indexador', '')
+            taxa_cdi = lanc.get('taxa_cdi', 0)
+            
+            if indexador == 'CDI' and taxa_cdi:
+                indexador = f"CDI {taxa_cdi}%"
+            
+            # Converter data_vencimento vazia para None
+            data_vencimento = lanc.get('data_vencimento')
+            if data_vencimento == '' or data_vencimento is None:
+                data_vencimento = None
+            
             lancamento = Lancamento.objects.create(
                 usuario=request.user,
                 tipo_operacao=lanc['tipo_operacao'],
@@ -166,8 +179,8 @@ def salvar_lancamentos(request):
                 total=Decimal(str(lanc['total'])),
                 emissor=lanc.get('emissor', ''),
                 tipo_renda_fixa=lanc.get('tipo_renda_fixa', ''),
-                indexador=lanc.get('indexador', ''),
-                data_vencimento=lanc.get('data_vencimento'),
+                indexador=indexador,
+                data_vencimento=data_vencimento,
                 liquidez_diaria=lanc.get('liquidez_diaria', False)
             )
             lancamentos_salvos.append(lancamento.id)
@@ -242,3 +255,72 @@ def consolidar_carteira(usuario):
     
     # Filtrar apenas posições com quantidade > 0
     return {k: v for k, v in posicoes.items() if v['quantidade'] > 0}
+
+@login_required
+@require_http_methods(["GET"])
+def buscar_acoes_valuation_api(request):
+    """API para autocomplete de ações (valuation)"""
+    query = request.GET.get('q', '').strip().upper()
+    
+    if len(query) < 1:
+        return JsonResponse({'resultados': []})
+    
+    try:
+        url = f"https://brapi.dev/api/quote/list?search={query}&limit=15"
+        response = requests.get(url, timeout=5)
+        
+        if not response.ok:
+            return JsonResponse({'resultados': []})
+        
+        data = response.json()
+        resultados = []
+        
+        for stock in data.get('stocks', [])[:15]:
+            ticker = stock.get('stock', '')
+            nome = stock.get('name', '')[:50]
+            
+            resultados.append({
+                'ticker': ticker,
+                'nome': nome,
+                'label': f"{ticker} - {nome}"
+            })
+        
+        return JsonResponse({'resultados': resultados})
+        
+    except Exception as e:
+        return JsonResponse({'resultados': []})
+
+
+@login_required
+@require_http_methods(["GET"])
+def calcular_valuation_api(request):
+    """API para calcular valuation de uma ação"""
+    from investments.services.valuation import calcular_valuation, formatar_resultado
+    
+    ticker = request.GET.get('ticker', '').strip().upper()
+    
+    if not ticker:
+        return JsonResponse({'erro': 'Ticker não informado'}, status=400)
+    
+    try:
+        resultado = calcular_valuation(ticker)
+        
+        if not resultado:
+            return JsonResponse({
+                'erro': 'Ação não encontrada ou dados insuficientes',
+                'ticker': ticker
+            }, status=404)
+        
+        return JsonResponse({'resultado': formatar_resultado(resultado)})
+        
+    except Exception as e:
+        print(f"[ERRO] Calcular valuation: {e}")
+        return JsonResponse({'erro': 'Erro ao calcular valuation'}, status=500)
+
+
+@login_required
+def valuation_page(request):
+    """Página principal de análise de valuation"""
+    return render(request, 'investments/valuation.html', {
+        'page_title': 'Análise de Valuation'
+    })
