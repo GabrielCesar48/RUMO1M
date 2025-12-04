@@ -1,129 +1,326 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Rumo1M</title>
+    <title>Login - RUMO1M</title>
     
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     
     <style>
         :root {
-            --primary: #10b981;
-            --secondary: #059669;
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --white: #ffffff;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-display: 'Poppins', 'Inter', sans-serif;
+            --radius-lg: 1rem;
+            --radius-xl: 1.5rem;
+            --radius-2xl: 2rem;
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            font-family: var(--font-primary);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveBackground 20s linear infinite;
+        }
+        
+        @keyframes moveBackground {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
         }
         
         .login-card {
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            background: var(--white);
+            border-radius: var(--radius-2xl);
+            box-shadow: var(--shadow-xl);
             overflow: hidden;
-            max-width: 400px;
-            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .login-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 40px 30px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 3rem 2rem;
             text-align: center;
+            color: var(--white);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+        
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+            position: relative;
+            z-index: 1;
         }
         
         .login-header h1 {
+            font-family: var(--font-display);
             font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
         }
         
         .login-header p {
-            opacity: 0.9;
-            margin: 0;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
         }
         
         .login-body {
-            padding: 30px;
+            padding: 2rem;
+        }
+        
+        .alert {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+            border-left: 4px solid var(--danger);
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
         }
         
         .form-control {
-            border-radius: 12px;
-            border: 2px solid #e5e7eb;
-            padding: 14px 16px;
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-lg);
             font-size: 1rem;
+            font-family: var(--font-primary);
+            transition: all var(--transition-base);
+            background: var(--gray-50);
         }
         
         .form-control:focus {
+            outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.15);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .input-icon {
+            position: relative;
+        }
+        
+        .input-icon i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-700);
+            font-size: 1.125rem;
+        }
+        
+        .input-icon .form-control {
+            padding-left: 3rem;
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-weight: 600;
-            font-size: 1.1rem;
             width: 100%;
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1.125rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
         }
         
-        .alert {
-            border-radius: 12px;
-            border: none;
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--white);
+        }
+        
+        .login-footer a {
+            color: var(--white);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 480px) {
+            .login-header {
+                padding: 2rem 1.5rem;
+            }
+            
+            .login-header h1 {
+                font-size: 1.75rem;
+            }
+            
+            .login-body {
+                padding: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-card">
-        <div class="login-header">
-            <i class="bi bi-graph-up-arrow" style="font-size: 3rem;"></i>
-            <h1>RUMO1M</h1>
-            <p>Acompanhe seus investimentos</p>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h1>RUMO1M</h1>
+                <p>Sua jornada ao primeiro milhão</p>
+            </div>
+            
+            <div class="login-body">
+                {% if form.errors %}
+                <div class="alert">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>Usuário ou senha incorretos</span>
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="id_username" class="form-label">Usuário</label>
+                        <div class="input-icon">
+                            <i class="bi bi-person"></i>
+                            <input 
+                                type="text" 
+                                name="username" 
+                                class="form-control" 
+                                id="id_username" 
+                                required 
+                                autofocus
+                                placeholder="Digite seu usuário">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="id_password" class="form-label">Senha</label>
+                        <div class="input-icon">
+                            <i class="bi bi-lock"></i>
+                            <input 
+                                type="password" 
+                                name="password" 
+                                class="form-control" 
+                                id="id_password" 
+                                required
+                                placeholder="Digite sua senha">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">
+                        Entrar
+                        <i class="bi bi-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
         </div>
         
-        <div class="login-body">
-            {% if form.errors %}
-            <div class="alert alert-danger mb-3">
-                Usuário ou senha incorretos
-            </div>
-            {% endif %}
-            
-            <form method="post">
-                {% csrf_token %}
-                
-                <div class="mb-3">
-                    <label for="id_username" class="form-label">Usuário</label>
-                    <input type="text" name="username" class="form-control" id="id_username" required autofocus>
-                </div>
-                
-                <div class="mb-4">
-                    <label for="id_password" class="form-label">Senha</label>
-                    <input type="password" name="password" class="form-control" id="id_password" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-box-arrow-in-right"></i> Entrar
-                </button>
-            </form>
+        <div class="login-footer">
+            <p>Não tem uma conta? <a href="#">Criar conta</a></p>
         </div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

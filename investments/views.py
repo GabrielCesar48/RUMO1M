@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import Aporte, Lancamento
+from .models import Aporte, Lancamento, PlanejamentoMensal
 from .forms import AporteForm
 from decimal import Decimal
 from django.views.decorators.http import require_http_methods
@@ -301,4 +301,51 @@ def valuation_page(request):
     """Página de análise de valuation"""
     return render(request, 'investments/valuation.html', {
         'page_title': 'Análise de Valuation'
+    })
+
+# ============================================================================
+# VIEW DE PLANEJAMENTO MENSAL - CORRIGIDA!
+# ============================================================================
+@login_required
+def configurar_planejamento(request):
+    """Criar ou editar planejamento mensal"""
+    try:
+        planejamento = PlanejamentoMensal.objects.get(usuario=request.user)
+    except PlanejamentoMensal.DoesNotExist:
+        planejamento = None
+    
+    if request.method == 'POST':
+        valor_planejado = request.POST.get('valor_planejado')
+        
+        if valor_planejado:
+            try:
+                valor_planejado = Decimal(valor_planejado)
+                
+                if planejamento:
+                    # Atualizar existente
+                    planejamento.valor_planejado = valor_planejado
+                    planejamento.save()
+                    messages.success(request, 'Planejamento atualizado com sucesso! ✅')
+                else:
+                    # Criar novo
+                    PlanejamentoMensal.objects.create(
+                        usuario=request.user,
+                        valor_planejado=valor_planejado
+                    )
+                    messages.success(request, 'Planejamento criado com sucesso! 🎉')
+                
+                return redirect('dashboard')
+            except Exception as e:
+                messages.error(request, f'Erro ao salvar planejamento: {e}')
+        else:
+            messages.error(request, 'Por favor, informe o valor planejado.')
+    
+    # Calcular valor corrigido se existir planejamento
+    valor_corrigido = None
+    if planejamento:
+        valor_corrigido = planejamento.calcular_valor_corrigido()
+    
+    return render(request, 'investments/planejamento.html', {
+        'planejamento': planejamento,
+        'valor_corrigido': valor_corrigido
     })

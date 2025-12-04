@@ -1,272 +1,861 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Rumo1M{% endblock %}
+{% block title %}Dashboard - RUMO1M{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Section */
+    .hero {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        border-radius: var(--radius-2xl);
+        padding: 3rem 2rem;
+        color: var(--white);
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 500px;
+        height: 500px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .hero h1 {
+        font-family: var(--font-display);
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    
+    .hero p {
+        font-size: 1.125rem;
+        opacity: 0.95;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: var(--white);
+        padding: 1.5rem;
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        transition: all var(--transition-base);
+        border: 2px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--primary);
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: var(--gray-500);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary);
+        font-family: var(--font-display);
+    }
+    
+    /* CARD DE PLANEJAMENTO - AGORA VERDE! */
+    .planning-card {
+        background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+        border-radius: var(--radius-2xl);
+        padding: 2rem;
+        color: var(--white);
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .planning-values {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .planning-value {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .planning-value.highlighted {
+        background: rgba(255, 255, 255, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.4);
+    }
+    
+    .planning-value-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+    
+    .planning-value-amount {
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: var(--font-display);
+    }
+    
+    /* ============================================================
+       BADGES EMPOLGANTES
+       ============================================================ */
+    .badges-section {
+        margin-bottom: 2rem;
+    }
+    
+    .badge-achievement {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 4px solid var(--accent);
+        border-radius: var(--radius-2xl);
+        padding: 2.5rem 2rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        animation: badgePulse 2s infinite;
+    }
+    
+    @keyframes badgePulse {
+        0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+        50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.6); }
+    }
+    
+    .badge-achievement::before {
+        content: '✨';
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 3rem;
+        animation: sparkle 1.5s infinite;
+    }
+    
+    @keyframes sparkle {
+        0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        50% { opacity: 0.7; transform: scale(1.2) rotate(180deg); }
+    }
+    
+    .badge-emoji {
+        font-size: 5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+        animation: bounce 2s infinite;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-15px); }
+    }
+    
+    .badge-content {
+        text-align: center;
+    }
+    
+    .badge-title {
+        font-family: var(--font-display);
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: var(--accent-dark);
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: -0.5px;
+    }
+    
+    .badge-message {
+        font-size: 1.25rem;
+        color: #92400e;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .badge-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--accent-dark);
+        font-family: var(--font-display);
+    }
+    
+    .badge-check {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 3rem;
+        color: var(--success);
+        animation: checkPulse 1.5s infinite;
+    }
+    
+    @keyframes checkPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+    }
+    
+    /* Próximo Badge */
+    .badge-next {
+        background: var(--white);
+        border-radius: var(--radius-2xl);
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        border: 2px solid var(--gray-200);
+        transition: all var(--transition-base);
+    }
+    
+    .badge-next:hover {
+        border-color: var(--primary);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .badge-next-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .badge-next-emoji {
+        font-size: 3rem;
+        filter: grayscale(100%);
+        opacity: 0.5;
+    }
+    
+    .badge-next-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 0.25rem;
+    }
+    
+    .badge-next-info p {
+        color: var(--gray-600);
+        margin: 0;
+    }
+    
+    .badge-progress-bar {
+        background: var(--gray-200);
+        height: 12px;
+        border-radius: var(--radius-full);
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .badge-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+        border-radius: var(--radius-full);
+        transition: width 1s ease-out;
+    }
+    
+    .badge-progress-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+    
+    .badge-progress-percent {
+        font-weight: 700;
+        color: var(--primary);
+    }
+    
+    /* Chart Container */
+    .chart-card {
+        background: var(--white);
+        border-radius: var(--radius-2xl);
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 2rem;
+    }
+    
+    .chart-card h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 400px;
+    }
+    
+    /* Grid de Gráficos */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    /* Carteira */
+    .portfolio-section {
+        margin-bottom: 2rem;
+    }
+    
+    .portfolio-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+    
+    .asset-card {
+        background: var(--white);
+        border-radius: var(--radius-xl);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
+        border-left: 4px solid var(--primary);
+        transition: all var(--transition-base);
+    }
+    
+    .asset-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+    }
+    
+    .asset-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .asset-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        object-fit: contain;
+        background: var(--gray-100);
+        padding: 0.5rem;
+    }
+    
+    .asset-info h4 {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    
+    .asset-info p {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        margin: 0;
+    }
+    
+    .asset-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .asset-stat {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.875rem;
+    }
+    
+    .asset-stat-label {
+        color: var(--gray-600);
+    }
+    
+    .asset-stat-value {
+        font-weight: 600;
+        color: var(--gray-900);
+    }
+    
+    .asset-profit {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .profit-positive {
+        color: var(--success);
+        font-weight: 700;
+    }
+    
+    .profit-negative {
+        color: var(--danger);
+        font-weight: 700;
+    }
+    
+    /* Histórico de Aportes */
+    .history-card {
+        background: var(--white);
+        border-radius: var(--radius-2xl);
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 2rem;
+    }
+    
+    .history-card h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .aporte-item {
+        background: var(--gray-50);
+        border-radius: var(--radius-lg);
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 4px solid var(--secondary);
+        transition: all var(--transition-fast);
+    }
+    
+    .aporte-item:hover {
+        background: var(--gray-100);
+        transform: translateX(4px);
+    }
+    
+    .aporte-valor {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .aporte-data {
+        color: var(--gray-600);
+        font-size: 0.875rem;
+    }
+    
+    .aporte-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius);
+        border: none;
+        background: var(--gray-200);
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-icon:hover {
+        background: var(--primary);
+        color: var(--white);
+        transform: scale(1.1);
+    }
+    
+    .btn-icon.danger:hover {
+        background: var(--danger);
+    }
+    
+    /* Floating Button */
+    .floating-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 64px;
+        height: 64px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--white);
+        font-size: 1.75rem;
+        box-shadow: var(--shadow-xl);
+        transition: all var(--transition-base);
+        z-index: 999;
+    }
+    
+    .floating-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 20px 40px rgba(37, 99, 235, 0.4);
+    }
+    
+    @media (max-width: 767px) {
+        .hero h1 { font-size: 2rem; }
+        .badge-title { font-size: 2rem; }
+        .badge-value { font-size: 2rem; }
+        .stat-value { font-size: 1.5rem; }
+        .chart-container { height: 300px; }
+        .charts-grid { grid-template-columns: 1fr; }
+        .portfolio-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Stats Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-value">R$ {{ total|floatformat:2 }}</div>
-            <div class="stat-label">Total Investido</div>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-content">
+        <h1>Bem-vindo de volta, {{ user.first_name|default:user.username }}!</h1>
+        <p>Acompanhe sua jornada rumo ao primeiro milhão 🚀</p>
+    </div>
+</section>
+
+<!-- Stats Grid -->
+<section class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <i class="bi bi-cash-stack"></i>
+        </div>
+        <div class="stat-label">Total Investido</div>
+        <div class="stat-value" style="color: var(--secondary);">R$ {{ total|floatformat:2 }}</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+            <i class="bi bi-calendar-check"></i>
+        </div>
+        <div class="stat-label">Aportes Realizados</div>
+        <div class="stat-value">{{ qtd_aportes }}</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <i class="bi bi-graph-up"></i>
+        </div>
+        <div class="stat-label">Média Mensal</div>
+        <div class="stat-value" style="color: var(--accent);">R$ {{ media_mensal|floatformat:2 }}</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+            <i class="bi bi-arrow-up-circle"></i>
+        </div>
+        <div class="stat-label">Maior Aporte</div>
+        <div class="stat-value" style="color: #7c3aed;">R$ {{ maior_aporte|floatformat:2 }}</div>
+    </div>
+</section>
+
+<!-- Planejamento - AGORA VERDE! -->
+{% if tem_planejamento %}
+<section class="planning-card">
+    <h2 style="margin: 0 0 0.5rem 0; display: flex; align-items: center; gap: 0.75rem;">
+        <i class="bi bi-calendar-check"></i>
+        Planejamento Mensal
+    </h2>
+    <p style="margin: 0; opacity: 0.9;">Valor corrigido automaticamente pela inflação (IPCA)</p>
+    
+    <div class="planning-values">
+        <div class="planning-value">
+            <div class="planning-value-label">Valor Inicial</div>
+            <div class="planning-value-amount">R$ {{ valor_planejado_base|floatformat:2 }}</div>
+        </div>
+        <div class="planning-value highlighted">
+            <div class="planning-value-label">Corrigido (Hoje)</div>
+            <div class="planning-value-amount">R$ {{ proximo_valor|floatformat:2 }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-value">{{ qtd_aportes }}</div>
-            <div class="stat-label">Aportes Realizados</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-value">R$ {{ media_mensal|floatformat:2 }}</div>
-            <div class="stat-label">Média Mensal</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-value">R$ {{ maior_aporte|floatformat:2 }}</div>
-            <div class="stat-label">Maior Aporte</div>
-        </div>
+</section>
+{% else %}
+<div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border-left: 4px solid var(--accent); border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <strong style="display: flex; align-items: center; gap: 0.5rem; color: var(--accent-dark); margin-bottom: 0.5rem;">
+            <i class="bi bi-exclamation-triangle"></i> Configure seu planejamento mensal!
+        </strong>
+        <p style="margin: 0; color: var(--gray-700);">Defina quanto quer investir por mês e o sistema corrige pela inflação automaticamente.</p>
     </div>
 </div>
-
-<!-- Próximo Aporte Sugerido -->
-{% if proximo_valor %}
-    <div class="alert alert-info fs-5 mb-4">
-        💡 Próximo aporte sugerido: <b>R$ {{ proximo_valor|floatformat:2 }}</b>
-    </div>
-{% elif proximo_mensagem %}
-    <div class="alert alert-warning fs-6 mb-4">
-        <i class="bi bi-exclamation-triangle"></i> {{ proximo_mensagem }}
-    </div>
 {% endif %}
 
-<!-- Badge de Progresso -->
-<div class="badge-container mb-4">
+<!-- Badges Section -->
+<section class="badges-section">
     {% if badges.atual %}
-    <div class="badge-card badge-alcancado animate-badge">
-        <div class="badge-emoji">{{ badges.atual.emoji }}</div>
-        <div class="badge-content">
-            <h3 class="badge-titulo">{{ badges.atual.titulo }}</h3>
-            <p class="badge-mensagem">{{ badges.atual.mensagem }}</p>
-            <div class="badge-valor">R$ {{ badges.atual.valor|floatformat:0 }}</div>
-        </div>
+    <div class="badge-achievement">
         <div class="badge-check">
             <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <div class="badge-emoji">{{ badges.atual.emoji }}</div>
+        <div class="badge-content">
+            <div class="badge-title">{{ badges.atual.titulo }}</div>
+            <div class="badge-message">{{ badges.atual.mensagem }}</div>
+            <div class="badge-value">R$ {{ badges.atual.valor|floatformat:0 }}</div>
         </div>
     </div>
     {% endif %}
     
     {% if not badges.proximo.alcancado %}
-    <div class="badge-card badge-proximo">
-        <div class="badge-emoji-gray">{{ badges.proximo.emoji }}</div>
-        <div class="badge-content">
-            <h3 class="badge-titulo-small">Próximo Marco</h3>
-            <h4 class="badge-titulo-proximo">{{ badges.proximo.titulo }}</h4>
-            <p class="badge-mensagem-small">{{ badges.proximo.mensagem }}</p>
-            <div class="badge-valor-proximo">R$ {{ badges.proximo.valor|floatformat:0 }}</div>
+    <div class="badge-next">
+        <div class="badge-next-header">
+            <div class="badge-next-emoji">{{ badges.proximo.emoji }}</div>
+            <div class="badge-next-info">
+                <h3>{{ badges.proximo.titulo }}</h3>
+                <p>{{ badges.proximo.mensagem }}</p>
+            </div>
         </div>
-        <div class="badge-progress">
-            <div class="progress" style="height: 10px;">
-                <div class="progress-bar progress-bar-striped progress-bar-animated bg-{{ badges.proximo.cor }}" 
-                     role="progressbar" 
-                     style="width: {{ badges.progresso }}%"
-                     aria-valuenow="{{ badges.progresso }}" 
-                     aria-valuemin="0" 
-                     aria-valuemax="100">
-                </div>
-            </div>
-            <div class="badge-progress-text">
-                <span><strong>{{ badges.progresso }}%</strong> completo</span>
-                <span class="text-muted">Faltam: <strong>R$ {{ badges.falta|floatformat:2 }}</strong></span>
-            </div>
+        
+        <div class="badge-progress-bar">
+            <div class="badge-progress-fill" style="width: {{ badges.progresso }}%;"></div>
+        </div>
+        
+        <div class="badge-progress-info">
+            <span>Meta: <strong>R$ {{ badges.proximo.valor|floatformat:0 }}</strong></span>
+            <span class="badge-progress-percent">{{ badges.progresso }}% completo</span>
+        </div>
+        
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); color: var(--gray-600); text-align: center;">
+            Faltam <strong style="color: var(--primary);">R$ {{ badges.falta|floatformat:2 }}</strong> para o próximo marco!
         </div>
     </div>
     {% else %}
-    <div class="badge-card badge-final animate-badge">
-        <div class="badge-emoji-huge">👑</div>
-        <div class="badge-content text-center">
-            <h2 class="badge-titulo-huge">VOCÊ CONQUISTOU O MILHÃO!</h2>
-            <p class="badge-mensagem-huge">Parabéns pela disciplina e determinação! 🎊</p>
+    <div class="badge-achievement">
+        <div class="badge-emoji">👑</div>
+        <div class="badge-content">
+            <div class="badge-title">VOCÊ CONQUISTOU O MILHÃO!</div>
+            <div class="badge-message">Parabéns pela disciplina e determinação! 🎊</div>
         </div>
     </div>
     {% endif %}
-</div>
+</section>
+
+<!-- Gráficos em Grid -->
+<section class="charts-grid">
+    <!-- Gráfico de Barras - Patrimônio por Mês -->
+    <div class="chart-card">
+        <h2>
+            <i class="bi bi-bar-chart"></i>
+            Patrimônio por Mês
+        </h2>
+        <div class="chart-container">
+            <canvas id="graficoBarras"></canvas>
+        </div>
+    </div>
+    
+    <!-- Gráfico de Rosca - Diversificação -->
+    {% if tem_carteira %}
+    <div class="chart-card">
+        <h2>
+            <i class="bi bi-pie-chart"></i>
+            Diversificação da Carteira
+        </h2>
+        <div class="chart-container">
+            <canvas id="graficoRosca"></canvas>
+        </div>
+    </div>
+    {% endif %}
+</section>
+
+<!-- Chart de Linha - Evolução -->
+<section class="chart-card">
+    <h2>
+        <i class="bi bi-graph-up"></i>
+        Evolução Patrimonial e Projeções
+    </h2>
+    <div class="chart-container">
+        <canvas id="graficoLinha"></canvas>
+    </div>
+</section>
 
 <!-- Carteira de Investimentos -->
 {% if tem_carteira %}
-<div class="card mb-4">
-    <div class="card-body">
-        <h5 class="card-title mb-4">
-            <i class="bi bi-wallet2"></i> Minha Carteira
-        </h5>
+<section class="portfolio-section">
+    <div class="chart-card">
+        <h2>
+            <i class="bi bi-wallet2"></i>
+            Minha Carteira
+        </h2>
         
         <!-- KPIs da Carteira -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value">R$ {{ total_investido_carteira|floatformat:2 }}</div>
-                    <div class="stat-label">Investido</div>
+        <div class="stats-grid" style="margin-top: 1.5rem;">
+            <div class="stat-card">
+                <div class="stat-label">Investido</div>
+                <div class="stat-value" style="color: var(--primary);">R$ {{ total_investido_carteira|floatformat:2 }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Valor Atual</div>
+                <div class="stat-value" style="color: var(--secondary);">R$ {{ total_mercado_carteira|floatformat:2 }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Lucro/Prejuízo</div>
+                <div class="stat-value {% if lucro_total >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {% if lucro_total >= 0 %}+{% endif %}R$ {{ lucro_total|floatformat:2 }}
                 </div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value">R$ {{ total_mercado_carteira|floatformat:2 }}</div>
-                    <div class="stat-label">Valor Atual</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value {% if lucro_total >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {% if lucro_total >= 0 %}+{% endif %}R$ {{ lucro_total|floatformat:2 }}
-                    </div>
-                    <div class="stat-label">Lucro/Prejuízo</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="stat-card">
-                    <div class="stat-value {% if rentabilidade >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {% if rentabilidade >= 0 %}+{% endif %}{{ rentabilidade|floatformat:2 }}%
-                    </div>
-                    <div class="stat-label">Rentabilidade</div>
+            <div class="stat-card">
+                <div class="stat-label">Rentabilidade</div>
+                <div class="stat-value {% if rentabilidade >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {% if rentabilidade >= 0 %}+{% endif %}{{ rentabilidade|floatformat:2 }}%
                 </div>
             </div>
         </div>
-
+        
         <!-- Posições -->
-        <h6 class="mb-3">Posições Atuais</h6>
-        <div class="row g-3 mb-4">
+        <div class="portfolio-grid">
             {% for chave, pos in carteira.items %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card" style="border-left: 4px solid {% if pos.lucro_prejuizo >= 0 %}#10b981{% else %}#ef4444{% endif %};">
-                    <div class="card-body p-3">
-                        <div class="d-flex align-items-center mb-2">
-                            {% if pos.logo %}
-                            <img src="{{ pos.logo }}" alt="{{ pos.ticker }}" style="width: 45px; height: 45px; border-radius: 8px; margin-right: 12px; object-fit: contain; background: #f3f4f6; padding: 5px;">
-                            {% else %}
-                            <div style="width: 45px; height: 45px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 8px; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
-                                {{ pos.ticker|slice:":2"|default:"--" }}
-                            </div>
-                            {% endif %}
-                            <div style="flex: 1; min-width: 0;">
-                                <strong style="font-size: 1.1rem;">{{ pos.ticker|default:pos.nome|truncatechars:10 }}</strong><br>
-                                <small class="text-muted" style="font-size: 0.75rem;">{{ pos.nome|truncatechars:20 }}</small>
-                            </div>
-                        </div>
-                        <div class="mt-2" style="font-size: 0.85rem;">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Quantidade:</span>
-                                <strong>{{ pos.quantidade|floatformat:2 }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Preço Médio:</span>
-                                <strong>R$ {{ pos.valor_medio|floatformat:2 }}</strong>
-                            </div>
-                            {% if pos.preco_atual %}
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Preço Atual:</span>
-                                <strong>R$ {{ pos.preco_atual|floatformat:2 }}</strong>
-                            </div>
-                            {% endif %}
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted">Total Investido:</span>
-                                <strong>R$ {{ pos.valor_total|floatformat:2 }}</strong>
-                            </div>
-                            {% if pos.valor_mercado %}
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Valor Atual:</span>
-                                <strong>R$ {{ pos.valor_mercado|floatformat:2 }}</strong>
-                            </div>
-                            <div class="d-flex justify-content-between pt-2" style="border-top: 1px solid #e5e7eb;">
-                                <span class="text-muted">L/P:</span>
-                                <strong class="{% if pos.lucro_prejuizo >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                    {% if pos.lucro_prejuizo >= 0 %}+{% endif %}R$ {{ pos.lucro_prejuizo|floatformat:2 }} ({% if pos.rentabilidade >= 0 %}+{% endif %}{{ pos.rentabilidade|floatformat:1 }}%)
-                                </strong>
-                            </div>
-                            {% endif %}
-                        </div>
+            <div class="asset-card">
+                <div class="asset-header">
+                    {% if pos.logo %}
+                    <img src="{{ pos.logo }}" alt="{{ pos.ticker }}" class="asset-logo">
+                    {% else %}
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                        {{ pos.ticker|slice:":2"|default:"--" }}
+                    </div>
+                    {% endif %}
+                    <div class="asset-info">
+                        <h4>{{ pos.ticker|default:pos.nome|truncatechars:10 }}</h4>
+                        <p>{{ pos.nome|truncatechars:20 }}</p>
                     </div>
                 </div>
+                <div class="asset-stats">
+                    <div class="asset-stat">
+                        <span class="asset-stat-label">Quantidade:</span>
+                        <span class="asset-stat-value">{{ pos.quantidade|floatformat:2 }}</span>
+                    </div>
+                    <div class="asset-stat">
+                        <span class="asset-stat-label">Preço Médio:</span>
+                        <span class="asset-stat-value">R$ {{ pos.valor_medio|floatformat:2 }}</span>
+                    </div>
+                    {% if pos.preco_atual %}
+                    <div class="asset-stat">
+                        <span class="asset-stat-label">Preço Atual:</span>
+                        <span class="asset-stat-value">R$ {{ pos.preco_atual|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="asset-stat">
+                        <span class="asset-stat-label">Total Investido:</span>
+                        <span class="asset-stat-value">R$ {{ pos.valor_total|floatformat:2 }}</span>
+                    </div>
+                    {% if pos.valor_mercado %}
+                    <div class="asset-stat">
+                        <span class="asset-stat-label">Valor Atual:</span>
+                        <span class="asset-stat-value">R$ {{ pos.valor_mercado|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if pos.lucro_prejuizo is not None %}
+                <div class="asset-profit">
+                    <span style="color: var(--gray-600); font-size: 0.875rem;">L/P:</span>
+                    <span class="{% if pos.lucro_prejuizo >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                        {% if pos.lucro_prejuizo >= 0 %}+{% endif %}R$ {{ pos.lucro_prejuizo|floatformat:2 }} 
+                        ({% if pos.rentabilidade >= 0 %}+{% endif %}{{ pos.rentabilidade|floatformat:1 }}%)
+                    </span>
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
-
-        <!-- Gráfico de Diversificação -->
-        {% if diversificacao %}
-        <h6 class="mb-3">Diversificação da Carteira</h6>
-        <div style="max-height: 350px; position: relative;">
-            <canvas id="graficoDiversificacao"></canvas>
-        </div>
-        {% endif %}
     </div>
-</div>
+</section>
 {% endif %}
 
-<!-- Gráfico -->
-<div class="card mb-4">
-    <div class="card-body p-2 p-md-4">
-        <h5 class="card-title mb-3 px-2">
-            <i class="bi bi-graph-up"></i> Evolução Patrimonial
-        </h5>
-        <div class="chart-container">
-            <canvas id="grafico"></canvas>
-        </div>
-    </div>
-</div>
-
-<!-- Lista de Últimas Movimentações -->
-<div class="card">
-    <div class="card-body">
-        <h5 class="card-title mb-4">
-            <i class="bi bi-clock-history"></i> Últimas Movimentações
-        </h5>
-        
-        {% if ultimos_items %}
-            {% for item in ultimos_items %}
-            <div class="aporte-item">
-                <div>
-                    <div class="aporte-valor">
-                        {% if item.is_aporte %}
-                            💰 Aporte - R$ {{ item.valor|floatformat:2 }}
-                        {% else %}
-                            {% if item.tipo == 'Compra' %}🟢{% else %}🔴{% endif %} {{ item.tipo }} - R$ {{ item.valor|floatformat:2 }}
-                        {% endif %}
-                    </div>
-                    <div class="aporte-data">
-                        {{ item.data|date:"d/m/Y" }}
-                        {% if item.descricao %}
-                        <span class="text-muted">· {{ item.descricao }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div>
+<!-- Histórico de Aportes -->
+<section class="history-card">
+    <h2>
+        <i class="bi bi-clock-history"></i>
+        Últimas Movimentações
+    </h2>
+    
+    {% if ultimos_items %}
+        {% for item in ultimos_items %}
+        <div class="aporte-item">
+            <div>
+                <div class="aporte-valor">
                     {% if item.is_aporte %}
-                    <a href="{% url 'editar_aporte' item.id %}" class="btn btn-sm btn-outline-secondary me-1">
-                        <i class="bi bi-pencil"></i>
-                    </a>
-                    <a href="{% url 'deletar_aporte' item.id %}" class="btn btn-sm btn-outline-danger">
-                        <i class="bi bi-trash"></i>
-                    </a>
+                        💰 Aporte - R$ {{ item.valor|floatformat:2 }}
+                    {% else %}
+                        {% if item.tipo == 'Compra' %}🟢{% else %}🔴{% endif %} {{ item.tipo }} - R$ {{ item.valor|floatformat:2 }}
+                    {% endif %}
+                </div>
+                <div class="aporte-data">
+                    {{ item.data|date:"d/m/Y" }}
+                    {% if item.descricao %}
+                    <span class="text-muted">· {{ item.descricao }}</span>
                     {% endif %}
                 </div>
             </div>
-            {% endfor %}
-        {% else %}
-            <div class="text-center py-5">
-                <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
-                <p class="text-muted mt-3">Nenhuma movimentação ainda</p>
-                <p class="text-muted">Adicione seu primeiro investimento para começar!</p>
+            {% if item.is_aporte %}
+            <div class="aporte-actions">
+                <a href="{% url 'editar_aporte' item.id %}" class="btn-icon">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{% url 'deletar_aporte' item.id %}" class="btn-icon danger">
+                    <i class="bi bi-trash"></i>
+                </a>
             </div>
-        {% endif %}
-    </div>
-</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--gray-500);">
+            <i class="bi bi-inbox" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+            <p>Nenhuma movimentação ainda</p>
+            <p style="font-size: 0.875rem;">Adicione seu primeiro investimento para começar!</p>
+        </div>
+    {% endif %}
+</section>
 
-
-<!-- Floating Action Button -->
+<!-- Floating Button -->
 <a href="{% url 'adicionar_aporte' %}" class="floating-btn">
     <i class="bi bi-plus-lg"></i>
 </a>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -277,12 +866,6 @@ const projecaoConservador = {{ projecao_conservador|safe }};
 const projecaoModerado = {{ projecao_moderado|safe }};
 const projecaoAgressivo = {{ projecao_agressivo|safe }};
 
-console.log('Histórico:', historico);
-console.log('Conservador:', projecaoConservador);
-console.log('Moderado:', projecaoModerado);
-console.log('Agressivo:', projecaoAgressivo);
-
-// Preparar labels
 const mesesHistorico = historico.length;
 const mesesProjecao = projecaoConservador.length;
 const totalMeses = mesesHistorico + mesesProjecao;
@@ -292,24 +875,18 @@ for (let i = 1; i <= totalMeses; i++) {
     labels.push(i);
 }
 
-// Preparar datasets
-// Histórico: valores reais acumulados até o último mês
 const dataHistorico = [...historico].concat(Array(mesesProjecao).fill(null));
-
-// Projeções: null até o fim do histórico, depois os valores
 const dataConservador = Array(mesesHistorico).fill(null).concat(projecaoConservador);
 const dataModerado = Array(mesesHistorico).fill(null).concat(projecaoModerado);
 const dataAgressivo = Array(mesesHistorico).fill(null).concat(projecaoAgressivo);
 
-console.log('Data Histórico:', dataHistorico.filter(v => v !== null).length, 'valores');
-console.log('Data Conservador:', dataConservador.filter(v => v !== null).length, 'valores');
-
-// Criar gráfico
-const ctx = document.getElementById('grafico');
-
-// Configurações responsivas
+// =============================================================================
+// GRÁFICO DE LINHA - Evolução e Projeções
+// =============================================================================
+const ctxLinha = document.getElementById('graficoLinha');
 const isMobile = window.innerWidth < 768;
-const config = {
+
+new Chart(ctxLinha, {
     type: 'line',
     data: {
         labels: labels,
@@ -319,10 +896,10 @@ const config = {
                 data: dataHistorico,
                 borderColor: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                borderWidth: isMobile ? 3 : 4,
+                borderWidth: 3,
                 tension: 0.3,
                 fill: true,
-                pointRadius: isMobile ? 0 : 5,
+                pointRadius: isMobile ? 0 : 4,
                 pointHoverRadius: 6,
                 pointBackgroundColor: '#10b981',
                 pointBorderColor: '#fff',
@@ -332,40 +909,31 @@ const config = {
                 label: isMobile ? '🟢 8%' : '🟢 Conservador (8% a.a.)',
                 data: dataConservador,
                 borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.05)',
-                borderWidth: isMobile ? 2 : 3,
+                borderWidth: 2,
                 borderDash: [10, 5],
                 tension: 0.4,
                 fill: false,
                 pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#22c55e',
             },
             {
                 label: isMobile ? '🟡 12%' : '🟡 Moderado (12% a.a.)',
                 data: dataModerado,
                 borderColor: '#eab308',
-                backgroundColor: 'rgba(234, 179, 8, 0.05)',
-                borderWidth: isMobile ? 2 : 3,
+                borderWidth: 2,
                 borderDash: [10, 5],
                 tension: 0.4,
                 fill: false,
                 pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#eab308',
             },
             {
                 label: isMobile ? '🔴 14%' : '🔴 Agressivo (14% a.a.)',
                 data: dataAgressivo,
                 borderColor: '#ef4444',
-                backgroundColor: 'rgba(239, 68, 68, 0.05)',
-                borderWidth: isMobile ? 2 : 3,
+                borderWidth: 2,
                 borderDash: [10, 5],
                 tension: 0.4,
                 fill: false,
                 pointRadius: 0,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#ef4444',
             }
         ]
     },
@@ -378,163 +946,163 @@ const config = {
                 position: 'top',
                 labels: {
                     usePointStyle: true,
-                    padding: isMobile ? 5 : 15,
-                    font: {
-                        size: isMobile ? 9 : 12,
-                        weight: 'bold'
-                    },
-                    boxWidth: isMobile ? 8 : 12,
-                    boxHeight: isMobile ? 8 : 12
+                    padding: isMobile ? 10 : 15,
+                    font: { size: isMobile ? 10 : 12, weight: '600' }
                 }
             },
             tooltip: {
                 mode: 'index',
                 intersect: false,
-                backgroundColor: 'rgba(0, 0, 0, 0.85)',
-                padding: isMobile ? 8 : 12,
-                cornerRadius: 10,
-                titleFont: {
-                    size: isMobile ? 12 : 14,
-                    weight: 'bold'
-                },
-                bodyFont: {
-                    size: isMobile ? 11 : 13
-                },
-                callbacks: {
-                    title: function(context) {
-                        const mes = context[0].label;
-                        const anos = Math.floor(mes / 12);
-                        const meses = mes % 12;
-                        if (anos > 0) {
-                            return `${anos}a ${meses}m`;
-                        }
-                        return `${meses} mês${meses !== 1 ? 'es' : ''}`;
-                    },
-                    label: function(context) {
-                        if (context.parsed.y !== null) {
-                            const valor = context.parsed.y.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0
-                            });
-                            return isMobile ? valor : `${context.dataset.label}: ${valor}`;
-                        }
-                        return '';
-                    }
-                }
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                cornerRadius: 8,
             }
         },
         scales: {
             x: {
-                grid: {
-                    display: false
-                },
+                grid: { display: false },
                 ticks: {
                     maxRotation: 0,
                     autoSkip: true,
-                    maxTicksLimit: isMobile ? 4 : 12,
-                    font: {
-                        size: isMobile ? 8 : 11
-                    },
-                    callback: function(value) {
-                        const mes = this.getLabelForValue(value);
-                        if (mes % 12 === 0) {
-                            return `${mes / 12}a`;
-                        }
-                        return '';
-                    }
+                    maxTicksLimit: isMobile ? 6 : 12,
                 }
             },
             y: {
                 beginAtZero: true,
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
-                },
+                grid: { color: 'rgba(0, 0, 0, 0.05)' },
                 ticks: {
                     callback: function(value) {
-                        if (value >= 1000000) {
-                            return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
-                        } else if (value >= 1000) {
-                            return isMobile ? (value / 1000).toFixed(0) + 'k' : 'R$ ' + (value / 1000).toFixed(0) + 'k';
-                        }
-                        return isMobile ? value.toFixed(0) : 'R$ ' + value.toFixed(0);
-                    },
-                    font: {
-                        size: isMobile ? 8 : 11
-                    },
-                    maxTicksLimit: isMobile ? 5 : 8
-                }
-            }
-        },
-        interaction: {
-            mode: 'nearest',
-            axis: 'x',
-            intersect: false
-        }
-    }
-};
-
-new Chart(ctx, config);
-</script>
-
-{% if diversificacao %}
-<script>
-const ctxDiv = document.getElementById('graficoDiversificacao');
-const diversificacaoData = {
-    {% for tipo, data in diversificacao.items %}
-    "{{ tipo }}": {{ data.percentual }},
-    {% endfor %}
-};
-
-const labels = [];
-const valores = [];
-const coresGrafico = [
-    '#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', 
-    '#ec4899', '#14b8a6', '#06b6d4', '#84cc16', '#6b7280'
-];
-
-let i = 0;
-for (const tipo in diversificacaoData) {
-    labels.push(tipo);
-    valores.push(diversificacaoData[tipo]);
-}
-
-new Chart(ctxDiv, {
-    type: 'doughnut',
-    data: {
-        labels: labels,
-        datasets: [{
-            data: valores,
-            backgroundColor: coresGrafico,
-            borderWidth: 3,
-            borderColor: '#fff'
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    padding: 15,
-                    font: {
-                        size: window.innerWidth < 768 ? 10 : 12,
-                        weight: 'bold'
-                    }
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                        if (value >= 1000000) return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
+                        if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                        return 'R$ ' + value.toFixed(0);
                     }
                 }
             }
         }
     }
 });
-</script>
+
+// =============================================================================
+// GRÁFICO DE BARRAS - Patrimônio por Mês
+// =============================================================================
+const ctxBarras = document.getElementById('graficoBarras');
+
+// Pegar últimos 12 meses ou o que tiver
+const ultimosMeses = historico.slice(-12);
+const labelsBarras = ultimosMeses.map((v, i) => `Mês ${historico.length - ultimosMeses.length + i + 1}`);
+
+new Chart(ctxBarras, {
+    type: 'bar',
+    data: {
+        labels: labelsBarras,
+        datasets: [{
+            label: 'Patrimônio Acumulado',
+            data: ultimosMeses,
+            backgroundColor: 'rgba(37, 99, 235, 0.8)',
+            borderColor: '#2563eb',
+            borderWidth: 2,
+            borderRadius: 8,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                cornerRadius: 8,
+                callbacks: {
+                    label: function(context) {
+                        return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                ticks: {
+                    callback: function(value) {
+                        if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                        return 'R$ ' + value.toFixed(0);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// =============================================================================
+// GRÁFICO DE ROSCA - Diversificação
+// =============================================================================
+{% if diversificacao %}
+const ctxRosca = document.getElementById('graficoRosca');
+const diversificacaoData = {
+    {% for tipo, data in diversificacao.items %}
+    "{{ tipo }}": {{ data.percentual }},
+    {% endfor %}
+};
+
+const labelsDiversificacao = [];
+const valoresDiversificacao = [];
+const coresGrafico = [
+    '#2563eb', '#10b981', '#f59e0b', '#8b5cf6', 
+    '#ec4899', '#14b8a6', '#06b6d4', '#84cc16'
+];
+
+for (const tipo in diversificacaoData) {
+    labelsDiversificacao.push(tipo);
+    valoresDiversificacao.push(diversificacaoData[tipo]);
+}
+
+new Chart(ctxRosca, {
+    type: 'doughnut',
+    data: {
+        labels: labelsDiversificacao,
+        datasets: [{
+            data: valoresDiversificacao,
+            backgroundColor: coresGrafico,
+            borderWidth: 3,
+            borderColor: '#fff',
+            hoverOffset: 10
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 15,
+                    font: { size: isMobile ? 10 : 12, weight: '600' },
+                    usePointStyle: true
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                padding: 12,
+                cornerRadius: 8,
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.parsed || 0;
+                        return label + ': ' + value.toFixed(1) + '%';
+                    }
+                }
+            }
+        }
+    }
+});
 {% endif %}
+</script>
 {% endblock %}

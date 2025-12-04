@@ -1,141 +1,458 @@
 {% extends 'base.html' %}
 
-{% block title %}Adicionar Lançamentos - Rumo1M{% endblock %}
+{% block title %}Adicionar Lançamentos - RUMO1M{% endblock %}
 
 {% block extra_css %}
 <style>
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        font-family: var(--font-display);
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--gray-900);
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-header p {
+        color: var(--gray-600);
+        font-size: 1.125rem;
+    }
+    
+    /* Indicador de Saldo */
     .saldo-indicator {
+        background: var(--white);
+        border-radius: var(--radius-2xl);
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 2rem;
+        text-align: center;
+        transition: all var(--transition-base);
+        border: 3px solid transparent;
+    }
+    
+    .saldo-positivo {
+        border-color: var(--secondary);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+    }
+    
+    .saldo-neutro {
+        border-color: var(--accent);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+    }
+    
+    .saldo-negativo {
+        border-color: var(--danger);
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+    }
+    
+    .saldo-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    
+    .saldo-valor {
+        font-size: 3rem;
+        font-weight: 800;
+        font-family: var(--font-display);
+        margin-bottom: 0.5rem;
+    }
+    
+    .saldo-positivo .saldo-valor { color: var(--secondary); }
+    .saldo-neutro .saldo-valor { color: var(--accent); }
+    .saldo-negativo .saldo-valor { color: var(--danger); }
+    
+    .saldo-status {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+    
+    /* Card Principal */
+    .main-card {
+        background: var(--white);
+        border-radius: var(--radius-2xl);
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 2rem;
+    }
+    
+    .main-card h2 {
         font-size: 1.5rem;
         font-weight: 700;
-        padding: 15px;
-        border-radius: 12px;
-        text-align: center;
-        margin-bottom: 20px;
-        transition: all 0.3s ease;
-    }
-    .saldo-positivo { background: #d1fae5; color: #065f46; }
-    .saldo-neutro { background: #fef3c7; color: #92400e; }
-    .saldo-negativo { background: #fee2e2; color: #991b1b; }
-    
-    .lancamento-item {
-        background: white;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-left: 4px solid #10b981;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        color: var(--gray-900);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
     
-    .lancamento-item.venda {
-        border-left-color: #ef4444;
+    /* Botões de Operação */
+    .operation-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .operation-btn {
+        padding: 1.25rem;
+        border-radius: var(--radius-xl);
+        border: 3px solid var(--gray-200);
+        background: var(--white);
+        cursor: pointer;
+        transition: all var(--transition-base);
+        font-weight: 600;
+        font-size: 1.125rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    
+    .operation-btn:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+    
+    .operation-btn.active {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: var(--white);
+        border-color: var(--primary);
+    }
+    
+    .operation-btn.active.venda {
+        background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        border-color: var(--danger);
+    }
+    
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .form-control, .form-select {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        font-size: 1rem;
+        font-family: var(--font-primary);
+        transition: all var(--transition-base);
+        background: var(--gray-50);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: var(--white);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    /* Autocomplete */
+    .autocomplete-wrapper {
+        position: relative;
     }
     
     .autocomplete-results {
         position: absolute;
-        z-index: 1000;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        max-height: 200px;
+        top: calc(100% + 0.5rem);
+        left: 0;
+        right: 0;
+        background: var(--white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xl);
+        max-height: 300px;
         overflow-y: auto;
-        width: 100%;
-        margin-top: 5px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        z-index: 1000;
+        display: none;
+    }
+    
+    .autocomplete-results.active {
+        display: block;
     }
     
     .autocomplete-item {
-        padding: 12px;
+        padding: 1rem 1.25rem;
         cursor: pointer;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .autocomplete-item:hover {
-        background: #f9fafb;
+        transition: background var(--transition-fast);
+        border-bottom: 1px solid var(--gray-100);
     }
     
     .autocomplete-item:last-child {
         border-bottom: none;
     }
+    
+    .autocomplete-item:hover {
+        background: var(--gray-50);
+    }
+    
+    .autocomplete-item strong {
+        color: var(--primary);
+        font-weight: 700;
+    }
+    
+    /* Input Group */
+    .input-group {
+        display: flex;
+        gap: 0;
+    }
+    
+    .input-group-text {
+        background: var(--gray-100);
+        border: 2px solid var(--gray-200);
+        border-right: none;
+        padding: 0.875rem 1rem;
+        border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+    
+    .input-group .form-control {
+        border-left: none;
+        border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    }
+    
+    .input-group:focus-within .input-group-text {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--white);
+    }
+    
+    /* Grid de Campos */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    /* Botões */
+    .btn {
+        padding: 0.875rem 2rem;
+        border-radius: var(--radius-lg);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all var(--transition-base);
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        color: var(--white);
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        width: 100%;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+    }
+    
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
+        color: var(--white);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        width: 100%;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+    
+    .btn-secondary {
+        background: var(--gray-200);
+        color: var(--gray-700);
+        width: 100%;
+    }
+    
+    .btn-secondary:hover {
+        background: var(--gray-300);
+    }
+    
+    /* Lista de Lançamentos */
+    .lancamentos-list {
+        display: none;
+        margin-top: 2rem;
+    }
+    
+    .lancamentos-list.active {
+        display: block;
+    }
+    
+    .lancamentos-list h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+    
+    .lancamento-item {
+        background: var(--gray-50);
+        border-radius: var(--radius-lg);
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-left: 4px solid var(--secondary);
+        transition: all var(--transition-fast);
+    }
+    
+    .lancamento-item:hover {
+        background: var(--gray-100);
+        transform: translateX(4px);
+    }
+    
+    .lancamento-item.venda {
+        border-left-color: var(--danger);
+    }
+    
+    .lancamento-info strong {
+        color: var(--gray-900);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    
+    .lancamento-info small {
+        color: var(--gray-600);
+        font-size: 0.875rem;
+    }
+    
+    .btn-remove {
+        background: var(--danger);
+        color: var(--white);
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        font-size: 0.875rem;
+    }
+    
+    .btn-remove:hover {
+        background: #dc2626;
+        transform: scale(1.05);
+    }
+    
+    @media (max-width: 767px) {
+        .page-header h1 { font-size: 2rem; }
+        .saldo-valor { font-size: 2rem; }
+        .form-grid { grid-template-columns: 1fr; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-{% csrf_token %}
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <!-- Indicador de Saldo -->
-        <div id="saldoIndicator" class="saldo-indicator saldo-neutro">
-            <div class="mb-1"><small id="statusSaldo">Faltam investir</small></div>
-            <div><strong id="saldoValor">R$ {{ proximo_valor|floatformat:2|default:"0,00" }}</strong></div>
+
+<div class="page-header">
+    <h1>💰 Adicionar Lançamentos</h1>
+    <p>Registre suas compras e vendas de ativos</p>
+</div>
+
+<div style="max-width: 900px; margin: 0 auto;">
+    {% csrf_token %}
+    
+    <!-- Indicador de Saldo -->
+    <div id="saldoIndicator" class="saldo-indicator saldo-neutro">
+        <div class="saldo-label" id="statusSaldo">Faltam investir</div>
+        <div class="saldo-valor" id="saldoValor">R$ {{ proximo_valor|floatformat:2|default:"0,00" }}</div>
+        <div class="saldo-status">
+            <i class="bi bi-info-circle"></i>
+            Valor corrigido pela inflação
         </div>
-
-        <!-- Card Principal -->
-        <div class="card">
-            <div class="card-body p-4">
-                <h4 class="card-title mb-4">
-                    <i class="bi bi-plus-circle"></i> Adicionar Lançamentos
-                </h4>
-
-                <!-- Tipo de Operação -->
-                <div class="btn-group w-100 mb-4" role="group">
-                    <input type="radio" class="btn-check" name="tipoOperacao" id="btnCompra" value="COMPRA" checked>
-                    <label class="btn btn-outline-success btn-lg" for="btnCompra">
-                        <i class="bi bi-cart-plus"></i> Compra
-                    </label>
-
-                    <input type="radio" class="btn-check" name="tipoOperacao" id="btnVenda" value="VENDA">
-                    <label class="btn btn-outline-danger btn-lg" for="btnVenda">
-                        <i class="bi bi-cart-dash"></i> Venda
-                    </label>
-                </div>
-
-                <!-- Tipo de Ativo -->
-                <div class="mb-3">
-                    <label class="form-label">Tipo de Ativo</label>
-                    <select id="tipoAtivo" class="form-select form-select-lg">
-                        <option value="">Selecionar</option>
-                        <option value="ACOES">Ações</option>
-                        <option value="FUNDOS">Fundos de Investimento</option>
-                        <option value="FIIS">FIIs</option>
-                        <option value="CRIPTOMOEDAS">Criptomoedas</option>
-                        <option value="BDRS">BDRs</option>
-                        <option value="ETFS">ETFs</option>
-                        <option value="TESOURO">Tesouro Direto</option>
-                        <option value="RENDA_FIXA">Renda Fixa (CDB/LCI/LCA/LC/LF/RDB)</option>
-                        <option value="OUTROS">Outros</option>
-                    </select>
-                </div>
-
-                <!-- Campos por Tipo de Ativo -->
-                <div id="camposAtivo">
-                    <!-- Campos Dinâmicos Aparecem Aqui -->
-                </div>
-
-                <!-- Botões de Ação -->
-                <div class="d-grid gap-2 mt-4">
-                    <button type="button" id="btnAdicionar" class="btn btn-primary btn-lg" disabled>
-                        <i class="bi bi-plus-lg"></i> Adicionar à Lista
-                    </button>
-                </div>
-
-                <!-- Lista de Lançamentos Temporários -->
-                <div id="listaLancamentos" class="mt-4" style="display: none;">
-                    <h5 class="mb-3">Lançamentos a Salvar:</h5>
-                    <div id="lancamentosContainer"></div>
-                    
-                    <div class="d-grid gap-2 mt-3">
-                        <button type="button" id="btnSalvar" class="btn btn-success btn-lg">
-                            <i class="bi bi-check2-circle"></i> Salvar Todos
-                        </button>
-                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-lg">
-                            <i class="bi bi-x-lg"></i> Cancelar
-                        </a>
-                    </div>
-                </div>
+    </div>
+    
+    <!-- Card Principal -->
+    <div class="main-card">
+        <h2>
+            <i class="bi bi-plus-circle"></i>
+            Nova Operação
+        </h2>
+        
+        <!-- Tipo de Operação -->
+        <div class="operation-toggle">
+            <button class="operation-btn active" data-operation="COMPRA">
+                <i class="bi bi-cart-plus"></i>
+                Compra
+            </button>
+            <button class="operation-btn venda" data-operation="VENDA">
+                <i class="bi bi-cart-dash"></i>
+                Venda
+            </button>
+        </div>
+        
+        <!-- Tipo de Ativo -->
+        <div class="form-group">
+            <label class="form-label">Tipo de Ativo</label>
+            <select id="tipoAtivo" class="form-select">
+                <option value="">Selecione o tipo</option>
+                <option value="ACOES">📈 Ações</option>
+                <option value="FIIS">🏢 FIIs</option>
+                <option value="BDRS">🌍 BDRs</option>
+                <option value="ETFS">📊 ETFs</option>
+                <option value="FUNDOS">💼 Fundos de Investimento</option>
+                <option value="CRIPTOMOEDAS">₿ Criptomoedas</option>
+                <option value="TESOURO">🏛️ Tesouro Direto</option>
+                <option value="RENDA_FIXA">💵 Renda Fixa (CDB/LCI/LCA)</option>
+                <option value="OUTROS">📦 Outros</option>
+            </select>
+        </div>
+        
+        <!-- Campos Dinâmicos -->
+        <div id="camposAtivo"></div>
+        
+        <!-- Botão Adicionar -->
+        <button type="button" id="btnAdicionar" class="btn btn-primary" disabled>
+            <i class="bi bi-plus-lg"></i>
+            Adicionar à Lista
+        </button>
+        
+        <!-- Lista de Lançamentos -->
+        <div id="listaLancamentos" class="lancamentos-list">
+            <h3>Lançamentos a Salvar:</h3>
+            <div id="lancamentosContainer"></div>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" id="btnSalvar" class="btn btn-success">
+                    <i class="bi bi-check2-circle"></i>
+                    Salvar Todos os Lançamentos
+                </button>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-lg"></i>
+                    Cancelar
+                </a>
             </div>
         </div>
     </div>
+    
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -145,47 +462,49 @@ const state = {
     saldoInicial: parseFloat('{{ proximo_valor|default:0 }}'),
     saldoRestante: parseFloat('{{ proximo_valor|default:0 }}'),
     lancamentos: [],
+    tipoOperacao: 'COMPRA',
     autocompleteTimeout: null
 };
 
-// Atualizar indicador de saldo
+// Toggle Operação
+document.querySelectorAll('.operation-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.operation-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        state.tipoOperacao = this.dataset.operation;
+    });
+});
+
+// Atualizar Saldo
 function atualizarSaldo() {
     const indicator = document.getElementById('saldoIndicator');
     const valorEl = document.getElementById('saldoValor');
+    const statusEl = document.getElementById('statusSaldo');
     
     const saldo = state.saldoRestante;
-    
-    // Mostrar sempre o valor positivo visualmente
     const valorAbsoluto = Math.abs(saldo);
+    
     valorEl.textContent = 'R$ ' + valorAbsoluto.toFixed(2).replace('.', ',');
     
-    // Mudar cor conforme saldo
-    indicator.classList.remove('saldo-positivo', 'saldo-neutro', 'saldo-negativo');
+    indicator.className = 'saldo-indicator';
+    
     if (saldo > 50) {
         indicator.classList.add('saldo-neutro');
+        statusEl.textContent = 'Faltam investir';
     } else if (saldo >= -50 && saldo <= 50) {
         indicator.classList.add('saldo-positivo');
+        statusEl.textContent = 'Objetivo atingido! ✅';
     } else {
         indicator.classList.add('saldo-negativo');
-    }
-    
-    // Atualizar texto explicativo
-    let textoStatus = '';
-    if (saldo > 50) {
-        textoStatus = 'Faltam investir';
-    } else if (saldo >= -50 && saldo <= 50) {
-        textoStatus = 'Objetivo atingido! ✅';
-    } else {
-        textoStatus = 'Investiu a mais';
-    }
-    
-    const statusEl = document.getElementById('statusSaldo');
-    if (statusEl) {
-        statusEl.textContent = textoStatus;
+        statusEl.textContent = 'Investiu a mais';
     }
 }
 
-// Gerar campos dinâmicos
+// Tipo de Ativo Change
+document.getElementById('tipoAtivo').addEventListener('change', function(e) {
+    gerarCampos(e.target.value);
+});
+
 function gerarCampos(tipo) {
     const container = document.getElementById('camposAtivo');
     container.innerHTML = '';
@@ -196,132 +515,109 @@ function gerarCampos(tipo) {
     }
     
     const usaAPI = ['ACOES', 'FUNDOS', 'FIIS', 'CRIPTOMOEDAS', 'BDRS', 'ETFS'].includes(tipo);
-    
     let html = '';
     
     if (usaAPI) {
-        html = '<div class="mb-3 position-relative">';
-        html += '<label class="form-label">Buscar Ativo</label>';
-        html += '<input type="text" id="inputBusca" class="form-control form-control-lg" placeholder="Digite o ticker ou nome...">';
-        html += '<div id="autocompleteResults" class="autocomplete-results" style="display: none;"></div>';
-        html += '<input type="hidden" id="tickerSelecionado">';
-        html += '</div>';
-        html += '<div class="mb-3">';
-        html += '<label class="form-label">Nome do Ativo</label>';
-        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" readonly>';
-        html += '</div>';
+        html = `
+            <div class="form-group autocomplete-wrapper">
+                <label class="form-label">Buscar Ativo</label>
+                <input type="text" id="inputBusca" class="form-control" placeholder="Digite o ticker ou nome...">
+                <div id="autocompleteResults" class="autocomplete-results"></div>
+                <input type="hidden" id="tickerSelecionado">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nome do Ativo</label>
+                <input type="text" id="nomeAtivo" class="form-control" readonly>
+            </div>
+        `;
     } else if (tipo === 'TESOURO') {
-        html = '<div class="mb-3">';
-        html += '<label class="form-label">Nome do Título</label>';
-        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" placeholder="Ex: Tesouro Selic 2029">';
-        html += '</div>';
+        html = `
+            <div class="form-group">
+                <label class="form-label">Nome do Título</label>
+                <input type="text" id="nomeAtivo" class="form-control" placeholder="Ex: Tesouro Selic 2029">
+            </div>
+        `;
     } else if (tipo === 'RENDA_FIXA') {
-        html = '<div class="row">';
-        html += '<div class="col-md-4 mb-3">';
-        html += '<label class="form-label">Emissor</label>';
-        html += '<input type="text" id="emissor" class="form-control form-control-lg" placeholder="Ex: Banco Inter">';
-        html += '</div>';
-        html += '<div class="col-md-4 mb-3">';
-        html += '<label class="form-label">Tipo de Título</label>';
-        html += '<select id="tipoRendaFixa" class="form-select form-select-lg">';
-        html += '<option value="">Selecionar</option>';
-        html += '<option value="CDB">CDB</option>';
-        html += '<option value="LCI">LCI</option>';
-        html += '<option value="LCA">LCA</option>';
-        html += '<option value="LC">LC</option>';
-        html += '<option value="LF">LF</option>';
-        html += '<option value="RDB">RDB</option>';
-        html += '</select></div>';
-        html += '<div class="col-md-4 mb-3">';
-        html += '<label class="form-label">Indexador</label>';
-        html += '<select id="indexador" class="form-select form-select-lg">';
-        html += '<option value="">Selecionar</option>';
-        html += '<option value="CDI">CDI</option>';
-        html += '<option value="IPCA">IPCA</option>';
-        html += '<option value="PREFIXADO">Prefixado</option>';
-        html += '</select></div></div>';
-        html += '<div class="row">';
-        html += '<div class="col-md-6 mb-3">';
-        html += '<label class="form-label">Taxa / % CDI</label>';
-        html += '<div class="input-group input-group-lg">';
-        html += '<input type="number" id="taxaCDI" class="form-control" step="0.01" min="0" placeholder="Ex: 100 ou 5.5">';
-        html += '<span class="input-group-text">%</span>';
-        html += '</div>';
-        html += '<small class="text-muted">Ex: 100 = 100% do CDI, 5.5 = 5.5% a.a.</small>';
-        html += '</div>';
-        html += '<div class="col-md-6 mb-3">';
-        html += '<label class="form-label">';
-        html += '<input type="checkbox" id="liquidezDiaria" class="form-check-input"> Liquidez Diária';
-        html += '</label></div></div>';
-        html += '<div class="mb-3">';
-        html += '<label class="form-label">Nome do Ativo (opcional)</label>';
-        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" placeholder="Ex: CDB 100% CDI - Banco Inter">';
-        html += '</div>';
+        html = `
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Emissor</label>
+                    <input type="text" id="emissor" class="form-control" placeholder="Ex: Banco Inter">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tipo de Título</label>
+                    <select id="tipoRendaFixa" class="form-select">
+                        <option value="">Selecionar</option>
+                        <option value="CDB">CDB</option>
+                        <option value="LCI">LCI</option>
+                        <option value="LCA">LCA</option>
+                        <option value="LC">LC</option>
+                        <option value="LF">LF</option>
+                        <option value="RDB">RDB</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Indexador</label>
+                    <select id="indexador" class="form-select">
+                        <option value="">Selecionar</option>
+                        <option value="CDI">CDI</option>
+                        <option value="IPCA">IPCA</option>
+                        <option value="PREFIXADO">Prefixado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nome do Ativo (opcional)</label>
+                <input type="text" id="nomeAtivo" class="form-control" placeholder="Ex: CDB 100% CDI - Banco Inter">
+            </div>
+        `;
     } else {
-        html = '<div class="mb-3">';
-        html += '<label class="form-label">Nome do Ativo</label>';
-        html += '<input type="text" id="nomeAtivo" class="form-control form-control-lg" placeholder="Digite o nome...">';
-        html += '</div>';
+        html = `
+            <div class="form-group">
+                <label class="form-label">Nome do Ativo</label>
+                <input type="text" id="nomeAtivo" class="form-control" placeholder="Digite o nome...">
+            </div>
+        `;
     }
     
-    // Campos comuns
     const hoje = new Date().toISOString().split('T')[0];
     const step = tipo === 'CRIPTOMOEDAS' ? '0.00000001' : '1';
     
-    html += '<div class="row">';
-    html += '<div class="col-md-4 mb-3">';
-    html += '<label class="form-label">Data</label>';
-    html += '<input type="date" id="dataCompra" class="form-control form-control-lg" value="' + hoje + '">';
-    html += '</div>';
-    html += '<div class="col-md-4 mb-3">';
-    html += '<label class="form-label">Quantidade</label>';
-    html += '<input type="number" id="quantidade" class="form-control form-control-lg" step="' + step + '" min="0">';
-    html += '</div>';
-    html += '<div class="col-md-4 mb-3">';
-    html += '<label class="form-label">Preço (R$)</label>';
-    html += '<input type="number" id="preco" class="form-control form-control-lg" step="0.01" min="0">';
-    html += '</div></div>';
-    html += '<div class="row">';
-    html += '<div class="col-md-6 mb-3">';
-    html += '<label class="form-label">Outros Custos (R$)</label>';
-    html += '<input type="number" id="custos" class="form-control form-control-lg" step="0.01" min="0" value="0">';
-    html += '</div>';
-    html += '<div class="col-md-6 mb-3">';
-    html += '<label class="form-label">Valor Total</label>';
-    html += '<input type="text" id="valorTotal" class="form-control form-control-lg" readonly>';
-    html += '</div></div>';
-    
-    if (tipo === 'RENDA_FIXA') {
-        html += '<div class="mb-3">';
-        html += '<label class="form-label">Data de Vencimento (se houver)</label>';
-        html += '<input type="date" id="dataVencimento" class="form-control form-control-lg">';
-        html += '</div>';
-    }
+    html += `
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Data</label>
+                <input type="date" id="dataCompra" class="form-control" value="${hoje}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Quantidade</label>
+                <input type="number" id="quantidade" class="form-control" step="${step}" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Preço (R$)</label>
+                <input type="number" id="preco" class="form-control" step="0.01" min="0" placeholder="0.00">
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Outros Custos (R$)</label>
+                <input type="number" id="custos" class="form-control" step="0.01" min="0" value="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Valor Total</label>
+                <input type="text" id="valorTotal" class="form-control" readonly style="background: var(--gray-100); font-weight: 700;">
+            </div>
+        </div>
+    `;
     
     container.innerHTML = html;
     
-    if (usaAPI) {
-        setupAutocomplete();
-    }
+    if (usaAPI) setupAutocomplete();
     setupCalculos();
-    
-    if (tipo === 'RENDA_FIXA') {
-        const liquidezEl = document.getElementById('liquidezDiaria');
-        if (liquidezEl) {
-            liquidezEl.addEventListener('change', function(e) {
-                const vencEl = document.getElementById('dataVencimento');
-                if (vencEl) {
-                    vencEl.disabled = e.target.checked;
-                    if (e.target.checked) vencEl.value = '';
-                }
-            });
-        }
-    }
     
     document.getElementById('btnAdicionar').disabled = false;
 }
 
-// Autocomplete
 function setupAutocomplete() {
     const input = document.getElementById('inputBusca');
     const results = document.getElementById('autocompleteResults');
@@ -331,39 +627,36 @@ function setupAutocomplete() {
         const query = e.target.value.trim();
         
         if (query.length < 2) {
-            results.style.display = 'none';
+            results.classList.remove('active');
             return;
         }
         
         state.autocompleteTimeout = setTimeout(async function() {
             const tipo = document.getElementById('tipoAtivo').value;
-            const url = '/investments/api/buscar-ativos/?q=' + query + '&tipo=' + tipo;
+            const url = '/investments/api/buscar-ativos/?q=' + encodeURIComponent(query) + '&tipo=' + tipo;
             
             try {
                 const response = await fetch(url);
                 const data = await response.json();
                 
                 if (data.resultados && data.resultados.length > 0) {
-                    let itemsHtml = '';
-                    for (let i = 0; i < data.resultados.length; i++) {
-                        const r = data.resultados[i];
-                        itemsHtml += '<div class="autocomplete-item" data-ticker="' + r.ticker + '" data-nome="' + r.nome + '">';
-                        itemsHtml += '<strong>' + r.ticker + '</strong> - ' + r.nome;
-                        itemsHtml += '</div>';
-                    }
-                    results.innerHTML = itemsHtml;
-                    results.style.display = 'block';
+                    results.innerHTML = data.resultados.map(r => `
+                        <div class="autocomplete-item" data-ticker="${r.ticker}" data-nome="${r.nome}">
+                            <strong>${r.ticker}</strong> - ${r.nome}
+                        </div>
+                    `).join('');
+                    results.classList.add('active');
                     
-                    document.querySelectorAll('.autocomplete-item').forEach(function(item) {
+                    document.querySelectorAll('.autocomplete-item').forEach(item => {
                         item.addEventListener('click', function() {
-                            selecionarAtivo(item.dataset.ticker, item.dataset.nome);
+                            selecionarAtivo(this.dataset.ticker, this.dataset.nome);
                         });
                     });
                 } else {
-                    results.style.display = 'none';
+                    results.classList.remove('active');
                 }
             } catch (error) {
-                console.error('Erro ao buscar ativos:', error);
+                console.error('Erro ao buscar:', error);
             }
         }, 300);
     });
@@ -373,35 +666,24 @@ async function selecionarAtivo(ticker, nome) {
     document.getElementById('tickerSelecionado').value = ticker;
     document.getElementById('nomeAtivo').value = nome;
     document.getElementById('inputBusca').value = ticker;
-    document.getElementById('autocompleteResults').style.display = 'none';
+    document.getElementById('autocompleteResults').classList.remove('active');
     
     try {
-        const response = await fetch('/investments/api/buscar-cotacao/?ticker=' + ticker);
-        
+        const response = await fetch('/investments/api/buscar-cotacao/?ticker=' + encodeURIComponent(ticker));
         if (response.ok) {
             const data = await response.json();
-            
             if (data.preco && data.preco > 0) {
                 document.getElementById('preco').value = data.preco.toFixed(2);
                 calcularTotal();
-            } else {
-                document.getElementById('preco').value = '';
-                document.getElementById('preco').focus();
             }
-        } else {
-            document.getElementById('preco').value = '';
-            document.getElementById('preco').focus();
-            document.getElementById('preco').placeholder = 'Digite o preço manualmente';
         }
     } catch (error) {
         console.error('Erro ao buscar cotação:', error);
-        document.getElementById('preco').value = '';
-        document.getElementById('preco').focus();
     }
 }
 
 function setupCalculos() {
-    ['quantidade', 'preco', 'custos'].forEach(function(id) {
+    ['quantidade', 'preco', 'custos'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', calcularTotal);
     });
@@ -411,90 +693,59 @@ function calcularTotal() {
     const qtd = parseFloat(document.getElementById('quantidade').value) || 0;
     const preco = parseFloat(document.getElementById('preco').value) || 0;
     const custos = parseFloat(document.getElementById('custos').value) || 0;
-    
     const total = (qtd * preco) + custos;
     document.getElementById('valorTotal').value = 'R$ ' + total.toFixed(2).replace('.', ',');
 }
 
+// Adicionar Lançamento
 document.getElementById('btnAdicionar').addEventListener('click', function() {
     const tipo = document.getElementById('tipoAtivo').value;
-    const tipoOpEl = document.querySelector('input[name="tipoOperacao"]:checked');
-
-    if (!tipoOpEl) {
-        alert("Escolha o tipo da operação (Compra ou Venda)");
-        return;
-    }
-
-    const tipoOp = tipoOpEl.value;
-    
     const nomeAtivoEl = document.getElementById('nomeAtivo');
     const qtdEl = document.getElementById('quantidade');
     const precoEl = document.getElementById('preco');
-
-    // VALIDA SE OS ELEMENTOS EXISTEM
-    if (!nomeAtivoEl || !qtdEl || !precoEl) {
-        alert('Os campos ainda não foram gerados. Escolha o tipo do ativo primeiro!');
-        return;
-    }
-
-    // VALIDA SE TÊM VALOR
-    if (!nomeAtivoEl.value.trim() || !qtdEl.value || !precoEl.value) {
+    
+    if (!nomeAtivoEl || !qtdEl || !precoEl || !nomeAtivoEl.value.trim() || !qtdEl.value || !precoEl.value) {
         alert('Preencha todos os campos obrigatórios!');
         return;
     }
-
-    // VALIDAÇÕES ESPECÍFICAS PARA RENDA_FIXA
+    
     if (tipo === 'RENDA_FIXA') {
         const emissorEl = document.getElementById('emissor');
         const tipoRendaFixaEl = document.getElementById('tipoRendaFixa');
         const indexadorEl = document.getElementById('indexador');
-        const taxaCDIEl = document.getElementById('taxaCDI');
-
-        if (!emissorEl || !emissorEl.value.trim()) {
-            alert('Preencha o Emissor');
-            return;
-        }
-        if (!tipoRendaFixaEl || !tipoRendaFixaEl.value) {
-            alert('Selecione o Tipo de Título');
-            return;
-        }
-        if (!indexadorEl || !indexadorEl.value) {
-            alert('Selecione o Indexador');
-            return;
-        }
-        if (!taxaCDIEl || !taxaCDIEl.value) {
-            alert('Preencha a Taxa / % CDI');
+        
+        if (!emissorEl?.value.trim() || !tipoRendaFixaEl?.value || !indexadorEl?.value) {
+            alert('Preencha todos os campos de Renda Fixa!');
             return;
         }
     }
     
     const lancamento = {
-        tipo_operacao: tipoOp,
+        tipo_operacao: state.tipoOperacao,
         tipo_ativo: tipo,
-        ticker: document.getElementById('tickerSelecionado') ? document.getElementById('tickerSelecionado').value : '',
+        ticker: document.getElementById('tickerSelecionado')?.value || '',
         nome_ativo: nomeAtivoEl.value,
         data: document.getElementById('dataCompra').value,
         quantidade: parseFloat(qtdEl.value),
         preco: parseFloat(precoEl.value),
         custos: parseFloat(document.getElementById('custos').value) || 0,
         total: (parseFloat(qtdEl.value) * parseFloat(precoEl.value)) + (parseFloat(document.getElementById('custos').value) || 0),
-        emissor: document.getElementById('emissor') ? document.getElementById('emissor').value : '',
-        tipo_renda_fixa: document.getElementById('tipoRendaFixa') ? document.getElementById('tipoRendaFixa').value : '',
-        indexador: document.getElementById('indexador') ? document.getElementById('indexador').value : '',
-        taxa_cdi: document.getElementById('taxaCDI') ? parseFloat(document.getElementById('taxaCDI').value) : 0,
-        data_vencimento: document.getElementById('dataVencimento') ? document.getElementById('dataVencimento').value : null,
-        liquidez_diaria: document.getElementById('liquidezDiaria') ? document.getElementById('liquidezDiaria').checked : false
+        emissor: document.getElementById('emissor')?.value || '',
+        tipo_renda_fixa: document.getElementById('tipoRendaFixa')?.value || '',
+        indexador: document.getElementById('indexador')?.value || '',
+        data_vencimento: document.getElementById('dataVencimento')?.value || null,
+        liquidez_diaria: document.getElementById('liquidezDiaria')?.checked || false
     };
     
     state.lancamentos.push(lancamento);
     
-    if (tipoOp === 'COMPRA') {
+    if (state.tipoOperacao === 'COMPRA') {
         state.saldoRestante -= lancamento.total;
     } else {
         state.saldoRestante += lancamento.total;
     }
-    atualizarSaldo();
     
+    atualizarSaldo();
     renderizarLancamentos();
     limparFormulario();
 });
@@ -504,28 +755,27 @@ function renderizarLancamentos() {
     const lista = document.getElementById('listaLancamentos');
     
     if (state.lancamentos.length === 0) {
-        lista.style.display = 'none';
+        lista.classList.remove('active');
         return;
     }
     
-    lista.style.display = 'block';
-    let html = '';
-    for (let i = 0; i < state.lancamentos.length; i++) {
-        const l = state.lancamentos[i];
+    lista.classList.add('active');
+    
+    container.innerHTML = state.lancamentos.map((l, i) => {
         const emoji = l.tipo_operacao === 'COMPRA' ? '🟢' : '🔴';
         const classe = l.tipo_operacao.toLowerCase();
-        html += '<div class="lancamento-item ' + classe + '">';
-        html += '<div class="d-flex justify-content-between align-items-center">';
-        html += '<div>';
-        html += '<strong>' + emoji + ' ' + l.nome_ativo + '</strong><br>';
-        html += '<small>' + l.quantidade + ' x R$ ' + l.preco.toFixed(2) + ' = R$ ' + l.total.toFixed(2) + '</small>';
-        html += '</div>';
-        html += '<button class="btn btn-sm btn-outline-danger" onclick="removerLancamento(' + i + ')">';
-        html += '<i class="bi bi-trash"></i>';
-        html += '</button>';
-        html += '</div></div>';
-    }
-    container.innerHTML = html;
+        return `
+            <div class="lancamento-item ${classe}">
+                <div class="lancamento-info">
+                    <strong>${emoji} ${l.nome_ativo}</strong>
+                    <small>${l.quantidade} x R$ ${l.preco.toFixed(2)} = R$ ${l.total.toFixed(2)}</small>
+                </div>
+                <button class="btn-remove" onclick="removerLancamento(${i})">
+                    <i class="bi bi-trash"></i> Remover
+                </button>
+            </div>
+        `;
+    }).join('');
 }
 
 function removerLancamento(index) {
@@ -536,9 +786,9 @@ function removerLancamento(index) {
     } else {
         state.saldoRestante -= lanc.total;
     }
-    atualizarSaldo();
     
     state.lancamentos.splice(index, 1);
+    atualizarSaldo();
     renderizarLancamentos();
 }
 
@@ -548,18 +798,14 @@ function limparFormulario() {
     document.getElementById('btnAdicionar').disabled = true;
 }
 
+// Salvar Todos
 document.getElementById('btnSalvar').addEventListener('click', async function() {
     if (state.lancamentos.length === 0) {
         alert('Adicione pelo menos um lançamento!');
         return;
     }
     
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : getCookie('csrftoken');
-    
-    if (!csrfToken) {
-        alert('Erro: Token CSRF não encontrado. Recarregue a página.');
-        return;
-    }
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
     
     try {
         const response = await fetch('/investments/api/salvar-lancamentos/', {
@@ -579,28 +825,8 @@ document.getElementById('btnSalvar').addEventListener('click', async function() 
             alert('Erro ao salvar: ' + (data.erro || 'Erro desconhecido'));
         }
     } catch (error) {
-        console.error('Erro completo:', error);
         alert('Erro ao salvar: ' + error.message);
     }
-});
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-document.getElementById('tipoAtivo').addEventListener('change', function(e) {
-    gerarCampos(e.target.value);
 });
 </script>
 {% endblock %}

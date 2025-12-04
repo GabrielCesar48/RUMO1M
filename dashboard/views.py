@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from investments.models import Aporte, Lancamento
-from investments.services.inflacao import calcular_proximo_aporte
+from investments.models import Aporte, Lancamento, PlanejamentoMensal
 from datetime import datetime
 from decimal import Decimal
 from collections import defaultdict
@@ -9,6 +8,9 @@ import requests
 
 @login_required
 def dashboard(request):
+    # Buscar planejamento
+    planejamento = PlanejamentoMensal.objects.filter(usuario=request.user).first()
+    
     # Buscar Aportes antigos (se existirem)
     aportes = Aporte.objects.filter(usuario=request.user).order_by("data")
     
@@ -30,6 +32,19 @@ def dashboard(request):
     maior_aporte_antigo = max((float(a.valor) for a in aportes), default=0)
     maior_lancamento = max((float(l.total) for l in lancamentos.filter(tipo_operacao='COMPRA')), default=0)
     maior_aporte = max(maior_aporte_antigo, maior_lancamento)
+    
+    # ====== PRÓXIMO APORTE SUGERIDO (NOVO) ======
+    proximo_valor = None
+    proximo_mensagem = None
+    valor_planejado_base = None
+    
+    if planejamento:
+        # Usar valor corrigido do planejamento
+        valor_planejado_base = float(planejamento.valor_planejado)
+        proximo_valor = planejamento.calcular_valor_corrigido()
+    else:
+        # Se não tem planejamento, sugerir criar um
+        proximo_mensagem = "Configure seu planejamento mensal de aportes!"
     
     if qtd_aportes > 0:
         # Histórico acumulado (aportes + lançamentos em ordem cronológica)
@@ -54,27 +69,11 @@ def dashboard(request):
         
         # Projeções
         meses_projecao = 120
-        aporte_mensal = media_mensal
+        aporte_mensal = proximo_valor if proximo_valor else media_mensal
         
         projecao_conservador = calcular_projecao(total_investido, aporte_mensal, meses_projecao, 0.08)
         projecao_moderado = calcular_projecao(total_investido, aporte_mensal, meses_projecao, 0.12)
         projecao_agressivo = calcular_projecao(total_investido, aporte_mensal, meses_projecao, 0.14)
-
-        # Próximo aporte sugerido
-        if aportes.exists():
-            proximo_sugerido = calcular_proximo_aporte(aportes)
-        else:
-            # Se não tem aportes, usar média dos lançamentos
-            proximo_sugerido = media_mensal if media_mensal > 0 else None
-        
-        if proximo_sugerido is None:
-            mes = datetime.now().month
-            ano = datetime.now().year
-            proximo_valor = None
-            proximo_mensagem = f"IPCA de {mes:02d}/{ano} ainda não foi divulgado pelo BCB."
-        else:
-            proximo_valor = proximo_sugerido
-            proximo_mensagem = None
 
         # Consolidar carteira
         carteira = consolidar_carteira(request.user)
@@ -134,6 +133,8 @@ def dashboard(request):
             "maior_aporte": round(maior_aporte, 2),
             "proximo_valor": proximo_valor,
             "proximo_mensagem": proximo_mensagem,
+            "valor_planejado_base": valor_planejado_base,
+            "tem_planejamento": planejamento is not None,
             "badges": badges,
             "ultimos_items": ultimos_items,
             "carteira": carteira,
@@ -154,8 +155,10 @@ def dashboard(request):
             "qtd_aportes": 0,
             "media_mensal": 0,
             "maior_aporte": 0,
-            "proximo_valor": None,
-            "proximo_mensagem": "Adicione seu primeiro investimento para começar!",
+            "proximo_valor": proximo_valor,
+            "proximo_mensagem": proximo_mensagem,
+            "valor_planejado_base": valor_planejado_base,
+            "tem_planejamento": planejamento is not None,
             "badges": calcular_badges(0),
             "ultimos_items": [],
             "carteira": {},

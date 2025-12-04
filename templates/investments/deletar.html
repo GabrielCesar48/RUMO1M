@@ -1,47 +1,165 @@
 {% extends 'base.html' %}
 
-{% block title %}Deletar Aporte - Rumo1M{% endblock %}
+{% block title %}Deletar Aporte - RUMO1M{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+        font-family: var(--font-display);
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--danger);
+        margin-bottom: 0.5rem;
+    }
+    
+    .delete-card {
+        background: var(--white);
+        border-radius: var(--radius-2xl);
+        padding: 3rem 2rem;
+        box-shadow: var(--shadow-xl);
+        max-width: 500px;
+        margin: 0 auto;
+        text-align: center;
+        border: 3px solid var(--danger);
+    }
+    
+    .warning-icon {
+        font-size: 5rem;
+        color: var(--danger);
+        margin-bottom: 1.5rem;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    .delete-card h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 1rem;
+    }
+    
+    .delete-card p {
+        color: var(--gray-600);
+        margin-bottom: 2rem;
+        font-size: 1.0625rem;
+    }
+    
+    .aporte-preview {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+        border-radius: var(--radius-xl);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 2px solid rgba(239, 68, 68, 0.2);
+    }
+    
+    .aporte-valor {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--danger);
+        font-family: var(--font-display);
+        margin-bottom: 0.5rem;
+    }
+    
+    .aporte-data {
+        color: var(--gray-600);
+        font-size: 0.9375rem;
+    }
+    
+    .btn {
+        padding: 0.875rem 2rem;
+        border-radius: var(--radius-lg);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all var(--transition-base);
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        color: var(--white);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+    
+    .btn-secondary {
+        background: var(--gray-200);
+        color: var(--gray-700);
+    }
+    
+    .btn-secondary:hover {
+        background: var(--gray-300);
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    @media (max-width: 767px) {
+        .page-header h1 { font-size: 2rem; }
+        .warning-icon { font-size: 3.5rem; }
+        .aporte-valor { font-size: 1.5rem; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-5">
-        <div class="card">
-            <div class="card-body p-4 text-center">
-                <div class="mb-4">
-                    <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 4rem;"></i>
-                </div>
-                
-                <h4 class="card-title mb-3">Confirmar Exclusão</h4>
-                
-                <p class="text-muted mb-4">
-                    Tem certeza que deseja excluir este aporte?
-                </p>
-                
-                <div class="aporte-item mb-4">
-                    <div>
-                        <div class="aporte-valor">R$ {{ aporte.valor|floatformat:2 }}</div>
-                        <div class="aporte-data">
-                            {{ aporte.data|date:"d/m/Y" }}
-                            {% if aporte.descricao %}
-                            <span class="text-muted">· {{ aporte.descricao }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-danger btn-lg">
-                            <i class="bi bi-trash"></i> Sim, Excluir
-                        </button>
-                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-lg">
-                            <i class="bi bi-x-lg"></i> Cancelar
-                        </a>
-                    </div>
-                </form>
-            </div>
+
+<div class="page-header">
+    <h1>🗑️ Confirmar Exclusão</h1>
+</div>
+
+<div class="delete-card">
+    <div class="warning-icon">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+    </div>
+    
+    <h2>Tem certeza que deseja excluir este aporte?</h2>
+    <p>Esta ação não pode ser desfeita.</p>
+    
+    <div class="aporte-preview">
+        <div class="aporte-valor">R$ {{ aporte.valor|floatformat:2 }}</div>
+        <div class="aporte-data">
+            {{ aporte.data|date:"d/m/Y" }}
+            {% if aporte.descricao %}
+            <br><span style="font-weight: 500;">{{ aporte.descricao }}</span>
+            {% endif %}
         </div>
     </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="btn-group">
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i>
+                Sim, Excluir Definitivamente
+            </button>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                <i class="bi bi-x-lg"></i>
+                Cancelar
+            </a>
+        </div>
+    </form>
 </div>
+
 {% endblock %}
