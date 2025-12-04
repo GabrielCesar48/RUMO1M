@@ -1,24 +1,25 @@
 """
 Serviço de cálculo de valuation usando brapi.dev
-VERSÃO FUNCIONAL - Requisição simplificada
+VERSÃO FINAL - APENAS DADOS REAIS (sem estimativas)
 """
 
 from decimal import Decimal
 import requests
 
-# TOKEN DA BRAPI.DEV (pegue em https://brapi.dev/dashboard)
-BRAPI_TOKEN = "pMMxagDigxKbDi8aQKWbrW"  # SEU TOKEN AQUI
+# TOKEN DA BRAPI.DEV
+BRAPI_TOKEN = "pMMxagDigxKbDi8aQKWbrW"
 
 
 def obter_dados_acao(ticker: str):
     """
     Busca dados fundamentalistas via brapi.dev
+    RETORNA APENAS DADOS REAIS - Sem estimativas ou cálculos
     """
     try:
         ticker_limpo = ticker.strip().upper().rstrip('F')
         
-        # Requisição SIMPLES - sem múltiplos módulos
-        url = f"https://brapi.dev/api/quote/{ticker_limpo}?token={BRAPI_TOKEN}&fundamental=true"
+        # Requisição completa com todos os módulos disponíveis
+        url = f"https://brapi.dev/api/quote/{ticker_limpo}?token={BRAPI_TOKEN}&fundamental=true&modules=summaryProfile"
         
         print(f"[DEBUG] Buscando: {ticker_limpo}")
         resp = requests.get(url, timeout=10)
@@ -50,45 +51,60 @@ def obter_dados_acao(ticker: str):
             'dy': 0,
         }
         
-        # EPS - Lucro Por Ação
-        eps_raw = stock.get('earningsPerShare', 0)
+        # EPS - Lucro Por Ação (múltiplas chaves possíveis)
+        eps_raw = stock.get('earningsPerShare') or stock.get('epsTrailingTwelveMonths')
         if eps_raw:
             dados['eps'] = abs(float(eps_raw))
         
-        # P/L - Preço / Lucro
-        pe_raw = stock.get('priceEarnings', 0)
+        # P/L - Preço / Lucro (múltiplas chaves possíveis)
+        pe_raw = stock.get('priceEarnings') or stock.get('trailingPE')
         if pe_raw:
             dados['pe'] = abs(float(pe_raw))
         
-        # ROE - Retorno sobre Patrimônio
-        roe_raw = stock.get('returnOnEquity', 0)
+        # ROE - Retorno sobre Patrimônio (APENAS DADOS REAIS)
+        roe_raw = stock.get('returnOnEquity') or stock.get('roe')
         if roe_raw:
             roe_val = float(roe_raw)
+            # Se vier em decimal (0.15 = 15%), multiplica por 100
             dados['roe'] = abs(roe_val * 100 if roe_val < 1 else roe_val)
         
-        # DY - Dividend Yield
-        dy_raw = stock.get('dividendYield', 0)
+        # DY - Dividend Yield (APENAS DADOS REAIS)
+        dy_raw = (
+            stock.get('dividendYield') or 
+            stock.get('lastDividendYield') or
+            stock.get('trailingAnnualDividendYield')
+        )
         if dy_raw:
             dy_val = float(dy_raw)
+            # Se vier em decimal (0.05 = 5%), multiplica por 100
             dados['dy'] = abs(dy_val * 100 if dy_val < 1 else dy_val)
         
-        # Calcular faltantes
+        # Calcular EPS e P/L se um existir e o outro não
         if dados['eps'] == 0 and dados['pe'] > 0:
             dados['eps'] = preco / dados['pe']
+            print(f"[INFO] EPS calculado via P/L: R$ {dados['eps']:.2f}")
         
         if dados['pe'] == 0 and dados['eps'] > 0:
             dados['pe'] = preco / dados['eps']
+            print(f"[INFO] P/L calculado via EPS: {dados['pe']:.2f}")
         
-        # Validar
+        # Validar mínimos necessários
         if dados['eps'] == 0:
             print(f"[ERRO] EPS não disponível")
             return None
         
-        print(f"[OK] Preço=R${dados['preco']:.2f}, P/L={dados['pe']:.2f}, EPS=R${dados['eps']:.2f}, ROE={dados['roe']:.2f}%, DY={dados['dy']:.2f}%")
+        # Log final
+        print(f"[OK] {ticker_limpo}:")
+        print(f"    Preço: R$ {dados['preco']:.2f}")
+        print(f"    P/L: {dados['pe']:.2f}x")
+        print(f"    EPS: R$ {dados['eps']:.2f}")
+        print(f"    ROE: {dados['roe']:.2f}% {'(REAL)' if dados['roe'] > 0 else '(NÃO DISPONÍVEL)'}")
+        print(f"    DY: {dados['dy']:.2f}% {'(REAL)' if dados['dy'] > 0 else '(NÃO DISPONÍVEL)'}")
+        
         return dados
         
     except Exception as e:
-        print(f"[ERRO] {e}")
+        print(f"[ERRO] Exceção: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -96,7 +112,8 @@ def obter_dados_acao(ticker: str):
 
 def calcular_valuation(ticker: str):
     """
-    Calcula valuation com 3 métodos
+    Calcula valuation com 3 métodos: Bazin, Graham e Lynch (PEG)
+    Só calcula se houver dados reais disponíveis
     """
     dados = obter_dados_acao(ticker)
     
@@ -109,15 +126,22 @@ def calcular_valuation(ticker: str):
     pe = Decimal(str(dados['pe']))
     dy = Decimal(str(dados['dy']))
     
-    # BAZIN
+    # ============================================================
+    # MÉTODO BAZIN - Baseado em Dividend Yield de 6%
+    # ============================================================
     bazin_teto = None
     bazin_status = "DADOS_INSUFICIENTES"
     bazin_margem = None
+    bazin_formula = "Dividend Yield não disponível na API"
     
-    if eps > 0:
-        bazin_teto = float(eps / Decimal('0.06'))
+    if dy > 0:
+        # Preço Teto = DPA / 0.06
+        # DPA (Dividendo por Ação) = (DY / 100) * Preço
+        dpa = (dy / 100) * preco
+        bazin_teto = float(dpa / Decimal('0.06'))
         margem = (bazin_teto - float(preco)) / bazin_teto * 100
         
+        # Critérios Bazin
         if float(preco) <= bazin_teto * 0.8:
             bazin_status = "COMPRAR"
         elif float(preco) <= bazin_teto:
@@ -128,16 +152,21 @@ def calcular_valuation(ticker: str):
             bazin_status = "VENDER"
         
         bazin_margem = margem
+        bazin_formula = f"DPA (R$ {float(dpa):.2f}) ÷ 0.06 = R$ {bazin_teto:.2f}"
     
-    # GRAHAM
+    # ============================================================
+    # MÉTODO GRAHAM - Preço Justo com P/L 15x
+    # ============================================================
     graham_justo = None
     graham_status = "DADOS_INSUFICIENTES"
     graham_margem = None
+    graham_formula = "EPS não disponível"
     
     if eps > 0:
         graham_justo = float(eps * 15)
         margem = (graham_justo - float(preco)) / graham_justo * 100
         
+        # Critérios Graham
         if float(preco) <= graham_justo * 0.75:
             graham_status = "COMPRAR"
         elif float(preco) < graham_justo:
@@ -148,12 +177,16 @@ def calcular_valuation(ticker: str):
             graham_status = "VENDER"
         
         graham_margem = margem
+        graham_formula = f"EPS (R$ {float(eps):.2f}) × 15 = R$ {graham_justo:.2f}"
     
-    # LYNCH
+    # ============================================================
+    # MÉTODO LYNCH - PEG Ratio (APENAS SE HOUVER ROE REAL)
+    # ============================================================
     lynch_peg = None
     lynch_status = "DADOS_INSUFICIENTES"
     lynch_margem = None
     lynch_ideal = None
+    lynch_formula = "ROE não disponível na API"
     
     if roe > 0 and pe > 0:
         lynch_peg = float(pe / roe)
@@ -163,6 +196,7 @@ def calcular_valuation(ticker: str):
             margem = (lynch_ideal - float(preco)) / lynch_ideal * 100
             lynch_margem = margem
         
+        # Critérios PEG
         if lynch_peg < 0.8:
             lynch_status = "COMPRAR"
         elif lynch_peg <= 1.0:
@@ -173,18 +207,32 @@ def calcular_valuation(ticker: str):
             lynch_status = "AGUARDAR"
         else:
             lynch_status = "VENDER"
+        
+        lynch_formula = f"P/L ({float(pe):.2f}) ÷ ROE ({float(roe):.2f}%) = {lynch_peg:.2f}"
     
-    # VOTAÇÃO
-    votos_compra = sum([1 for s in [bazin_status, graham_status, lynch_status] if s == "COMPRAR"])
-    votos_venda = sum([1 for s in [bazin_status, graham_status, lynch_status] if s == "VENDER"])
+    # ============================================================
+    # RECOMENDAÇÃO GERAL (VOTAÇÃO - só conta métodos com dados)
+    # ============================================================
+    metodos_validos = [s for s in [bazin_status, graham_status, lynch_status] if s != "DADOS_INSUFICIENTES"]
     
-    if votos_compra >= 2:
-        status_geral = "COMPRAR"
-    elif votos_venda >= 2:
-        status_geral = "VENDER"
+    if len(metodos_validos) == 0:
+        status_geral = "DADOS_INSUFICIENTES"
+        votos_compra = 0
+        votos_venda = 0
     else:
-        status_geral = "AGUARDAR"
+        votos_compra = sum([1 for s in metodos_validos if s == "COMPRAR"])
+        votos_venda = sum([1 for s in metodos_validos if s == "VENDER"])
+        
+        if votos_compra >= len(metodos_validos) / 2:
+            status_geral = "COMPRAR"
+        elif votos_venda >= len(metodos_validos) / 2:
+            status_geral = "VENDER"
+        else:
+            status_geral = "AGUARDAR"
     
+    # ============================================================
+    # RETORNAR RESULTADO ESTRUTURADO
+    # ============================================================
     return {
         'ticker': dados['ticker'],
         'preco_atual': f"R$ {float(preco):.2f}",
@@ -193,8 +241,8 @@ def calcular_valuation(ticker: str):
             'preco': f"R$ {float(preco):.2f}",
             'eps': f"R$ {float(eps):.2f}",
             'pe': f"{float(pe):.2f}x",
-            'roe': f"{float(roe):.2f}%",
-            'dy': f"{float(dy):.2f}%",
+            'roe': f"{float(roe):.2f}%" if roe > 0 else "N/A",
+            'dy': f"{float(dy):.2f}%" if dy > 0 else "N/A",
         },
         
         'bazin': {
@@ -202,7 +250,7 @@ def calcular_valuation(ticker: str):
             'status': bazin_status,
             'margem': f"{bazin_margem:.1f}%" if bazin_margem is not None else "N/A",
             'emoji': '🟢' if bazin_status == 'COMPRAR' else ('🔴' if bazin_status == 'VENDER' else '🟡'),
-            'formula': f"EPS (R$ {float(eps):.2f}) ÷ 0.06 = R$ {bazin_teto:.2f}" if bazin_teto else "Precisa de EPS",
+            'formula': bazin_formula,
         },
         
         'graham': {
@@ -210,7 +258,7 @@ def calcular_valuation(ticker: str):
             'status': graham_status,
             'margem': f"{graham_margem:.1f}%" if graham_margem is not None else "N/A",
             'emoji': '🟢' if graham_status == 'COMPRAR' else ('🔴' if graham_status == 'VENDER' else '🟡'),
-            'formula': f"EPS (R$ {float(eps):.2f}) × 15 = R$ {graham_justo:.2f}" if graham_justo else "Precisa de EPS",
+            'formula': graham_formula,
         },
         
         'lynch': {
@@ -219,13 +267,13 @@ def calcular_valuation(ticker: str):
             'status': lynch_status,
             'margem': f"{lynch_margem:.1f}%" if lynch_margem is not None else "N/A",
             'emoji': '🟢' if lynch_status == 'COMPRAR' else ('🔴' if lynch_status == 'VENDER' else '🟡'),
-            'formula': f"P/L ({float(pe):.2f}) ÷ ROE ({float(roe):.2f}%) = {lynch_peg:.2f}" if lynch_peg else "Precisa de P/L e ROE",
+            'formula': lynch_formula,
         },
         
         'recomendacao': {
             'status': status_geral,
             'emoji': '🟢' if status_geral == 'COMPRAR' else ('🔴' if status_geral == 'VENDER' else '🟡'),
-            'pontos_compra': votos_compra,
-            'pontos_venda': votos_venda,
+            'pontos_compra': votos_compra if metodos_validos else 0,
+            'pontos_venda': votos_venda if metodos_validos else 0,
         }
     }
