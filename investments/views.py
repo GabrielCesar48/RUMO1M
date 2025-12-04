@@ -4,13 +4,11 @@ from django.contrib import messages
 from django.http import JsonResponse
 from .models import Aporte, Lancamento
 from .forms import AporteForm
-import requests
 from decimal import Decimal
 from django.views.decorators.http import require_http_methods
 
 @login_required
 def adicionar_aporte(request):
-    # Buscar o próximo valor sugerido (mesma lógica do dashboard)
     aportes = Aporte.objects.filter(usuario=request.user).order_by("data")
     
     proximo_valor = None
@@ -66,69 +64,92 @@ def deletar_aporte(request, pk):
 
 @login_required
 def buscar_ativos_api(request):
-    """Busca ativos via brapi.dev"""
-    query = request.GET.get('q', '').strip()
+    """Busca ativos - LISTA ESTÁTICA (sem necessidade de API externa)"""
+    query = request.GET.get('q', '').strip().upper()
     tipo_ativo = request.GET.get('tipo', 'ACOES')
     
     if len(query) < 2:
         return JsonResponse({'resultados': []})
     
-    try:
-        # API brapi.dev
-        url = f"https://brapi.dev/api/quote/list?search={query}&limit=10"
-        response = requests.get(url, timeout=5)
-        data = response.json()
-        
-        resultados = []
-        if 'stocks' in data:
-            for stock in data['stocks']:
-                # Filtrar por tipo se necessário
-                resultados.append({
-                    'ticker': stock.get('stock'),
-                    'nome': stock.get('name'),
-                    'tipo': stock.get('type', 'stock')
-                })
-        
-        return JsonResponse({'resultados': resultados})
-    except Exception as e:
-        return JsonResponse({'erro': str(e)}, status=500)
+    # Lista estática das principais ações brasileiras
+    acoes_brasileiras = [
+        ('PETR3', 'Petrobras ON'),
+        ('PETR4', 'Petrobras PN'),
+        ('VALE3', 'Vale ON'),
+        ('ITUB3', 'Itaú Unibanco ON'),
+        ('ITUB4', 'Itaú Unibanco PN'),
+        ('BBDC3', 'Bradesco ON'),
+        ('BBDC4', 'Bradesco PN'),
+        ('BBAS3', 'Banco do Brasil ON'),
+        ('ABEV3', 'Ambev ON'),
+        ('B3SA3', 'B3 ON'),
+        ('WEGE3', 'WEG ON'),
+        ('RENT3', 'Localiza ON'),
+        ('RAIL3', 'Rumo ON'),
+        ('SUZB3', 'Suzano ON'),
+        ('JBSS3', 'JBS ON'),
+        ('MGLU3', 'Magazine Luiza ON'),
+        ('LREN3', 'Lojas Renner ON'),
+        ('GGBR4', 'Gerdau PN'),
+        ('USIM5', 'Usiminas PNA'),
+        ('CSNA3', 'CSN ON'),
+        ('EMBR3', 'Embraer ON'),
+        ('RADL3', 'Raia Drogasil ON'),
+        ('HAPV3', 'Hapvida ON'),
+        ('VIVT3', 'Telefônica Brasil ON'),
+        ('ELET3', 'Eletrobras ON'),
+        ('ELET6', 'Eletrobras PNB'),
+        ('CMIG4', 'Cemig PN'),
+        ('ENBR3', 'Energias BR ON'),
+        ('ENGI11', 'Energisa UNT'),
+        ('TAEE11', 'Taesa UNT'),
+        ('CPLE6', 'Copel PNB'),
+        ('SANB11', 'Santander BR UNT'),
+        ('BPAC11', 'BTG Pactual UNT'),
+        ('FLRY3', 'Fleury ON'),
+        ('PRIO3', 'Prio ON'),
+        ('RECV3', 'PetroReconcavo ON'),
+        ('KLBN11', 'Klabin UNT'),
+        ('CSAN3', 'Cosan ON'),
+        ('RAIZ4', 'Raízen PN'),
+        ('EQTL3', 'Equatorial ON'),
+        ('SBSP3', 'Sabesp ON'),
+    ]
+    
+    resultados = []
+    for ticker, nome in acoes_brasileiras:
+        if query in ticker or query in nome.upper():
+            resultados.append({
+                'ticker': ticker,
+                'nome': nome,
+                'tipo': 'stock'
+            })
+    
+    return JsonResponse({'resultados': resultados[:15]})
 
 @login_required
 def buscar_cotacao_api(request):
-    """Busca cotação atual via brapi.dev"""
+    """Busca cotação via yfinance"""
+    import yfinance as yf
+    
     ticker = request.GET.get('ticker', '').strip().upper()
     
     if not ticker:
         return JsonResponse({'erro': 'Ticker não informado'}, status=400)
     
     try:
-        # Tentar com o ticker original
-        url = f"https://brapi.dev/api/quote/{ticker}?token=wWnUUimgEEC3uu8dXsdrTa"
-        response = requests.get(url, timeout=5)
+        if not ticker.endswith('.SA'):
+            ticker = f"{ticker}.SA"
         
-        # Se der 404, pode ser que o ticker tenha sufixo
-        if response.status_code == 404:
-            # Tenta sem sufixo (ex: PETR3F -> PETR3)
-            ticker_limpo = ticker.rstrip('F')
-            url = f"https://brapi.dev/api/quote/{ticker_limpo}?token=wWnUUimgEEC3uu8dXsdrTa"
-            response = requests.get(url, timeout=5)
+        stock = yf.Ticker(ticker)
+        info = stock.info
         
-        if response.status_code == 404:
+        if 'currentPrice' in info:
             return JsonResponse({
-                'erro': 'Ativo não encontrado na API',
-                'ticker': ticker,
-                'preco': 0
-            }, status=404)
-        
-        data = response.json()
-        
-        if 'results' in data and len(data['results']) > 0:
-            resultado = data['results'][0]
-            return JsonResponse({
-                'ticker': resultado.get('symbol'),
-                'nome': resultado.get('longName'),
-                'preco': resultado.get('regularMarketPrice', 0),
-                'moeda': resultado.get('currency', 'BRL')
+                'ticker': ticker.replace('.SA', ''),
+                'nome': info.get('longName', ''),
+                'preco': float(info.get('currentPrice', 0) or info.get('regularMarketPrice', 0)),
+                'moeda': 'BRL'
             })
         else:
             return JsonResponse({
@@ -136,14 +157,14 @@ def buscar_cotacao_api(request):
                 'ticker': ticker,
                 'preco': 0
             }, status=404)
-    except requests.Timeout:
-        return JsonResponse({'erro': 'Timeout na API', 'preco': 0}, status=500)
+            
     except Exception as e:
+        print(f"[ERRO] Buscar cotação: {e}")
         return JsonResponse({'erro': str(e), 'preco': 0}, status=500)
 
 @login_required
 def salvar_lancamentos(request):
-    """Salva múltiplos lançamentos de uma vez"""
+    """Salva múltiplos lançamentos"""
     if request.method != 'POST':
         return JsonResponse({'erro': 'Método não permitido'}, status=405)
     
@@ -154,14 +175,12 @@ def salvar_lancamentos(request):
         
         lancamentos_salvos = []
         for lanc in lancamentos_data:
-            # Tratar taxa_cdi
             indexador = lanc.get('indexador', '')
             taxa_cdi = lanc.get('taxa_cdi', 0)
             
             if indexador == 'CDI' and taxa_cdi:
                 indexador = f"CDI {taxa_cdi}%"
             
-            # Converter data_vencimento vazia para None
             data_vencimento = lanc.get('data_vencimento')
             if data_vencimento == '' or data_vencimento is None:
                 data_vencimento = None
@@ -192,112 +211,65 @@ def salvar_lancamentos(request):
             'ids': lancamentos_salvos
         })
     except Exception as e:
+        print(f"[ERRO] Salvar lançamentos: {e}")
         return JsonResponse({'erro': str(e)}, status=500)
-    
-def consolidar_carteira(usuario):
-    """Consolida todas as operações em posições atuais"""
-    from collections import defaultdict
-    
-    lancamentos = Lancamento.objects.filter(usuario=usuario).order_by('data')
-    
-    # Agrupar por ticker/nome
-    posicoes = defaultdict(lambda: {
-        'quantidade': Decimal('0'),
-        'valor_medio': Decimal('0'),
-        'valor_total': Decimal('0'),
-        'tipo_ativo': '',
-        'ticker': '',
-        'nome': '',
-        'logo': ''
-    })
-    
-    for lanc in lancamentos:
-        chave = lanc.ticker or lanc.nome_ativo
-        
-        if lanc.tipo_operacao == 'COMPRA':
-            # Compra: adiciona quantidade
-            qtd_anterior = posicoes[chave]['quantidade']
-            valor_anterior = posicoes[chave]['valor_total']
-            
-            posicoes[chave]['quantidade'] += lanc.quantidade
-            posicoes[chave]['valor_total'] += lanc.total
-            posicoes[chave]['valor_medio'] = posicoes[chave]['valor_total'] / posicoes[chave]['quantidade'] if posicoes[chave]['quantidade'] > 0 else Decimal('0')
-        else:
-            # Venda: remove quantidade
-            posicoes[chave]['quantidade'] -= lanc.quantidade
-            # Reduz valor proporcional
-            if posicoes[chave]['quantidade'] > 0:
-                posicoes[chave]['valor_total'] = posicoes[chave]['valor_medio'] * posicoes[chave]['quantidade']
-            else:
-                posicoes[chave]['valor_total'] = Decimal('0')
-        
-        # Atualizar metadados
-        posicoes[chave]['tipo_ativo'] = lanc.tipo_ativo
-        posicoes[chave]['ticker'] = lanc.ticker
-        posicoes[chave]['nome'] = lanc.nome_ativo
-    
-    # Buscar logos e preços atuais
-    for chave, pos in posicoes.items():
-        if pos['quantidade'] > 0 and pos['ticker']:
-            try:
-                url = f"https://brapi.dev/api/quote/{pos['ticker']}"
-                response = requests.get(url, timeout=3)
-                if response.ok:
-                    data = response.json()
-                    if 'results' in data and len(data['results']) > 0:
-                        resultado = data['results'][0]
-                        pos['logo'] = resultado.get('logourl', '')
-                        pos['preco_atual'] = Decimal(str(resultado.get('regularMarketPrice', 0)))
-                        pos['valor_mercado'] = pos['preco_atual'] * pos['quantidade']
-                        pos['lucro_prejuizo'] = pos['valor_mercado'] - pos['valor_total']
-            except:
-                pass
-    
-    # Filtrar apenas posições com quantidade > 0
-    return {k: v for k, v in posicoes.items() if v['quantidade'] > 0}
 
 @login_required
 @require_http_methods(["GET"])
 def buscar_acoes_valuation_api(request):
-    """API para autocomplete de ações (valuation)"""
+    """API para autocomplete - lista estática"""
     query = request.GET.get('q', '').strip().upper()
     
     if len(query) < 1:
         return JsonResponse({'resultados': []})
     
-    try:
-        url = f"https://brapi.dev/api/quote/list?search={query}&limit=15"
-        response = requests.get(url, timeout=5)
-        
-        if not response.ok:
-            return JsonResponse({'resultados': []})
-        
-        data = response.json()
-        resultados = []
-        
-        for stock in data.get('stocks', [])[:15]:
-            ticker = stock.get('stock', '')
-            nome = stock.get('name', '')[:50]
-            
+    # Principais ações brasileiras
+    acoes = [
+        ('PETR3', 'Petrobras ON'),
+        ('PETR4', 'Petrobras PN'),
+        ('VALE3', 'Vale ON'),
+        ('ITUB3', 'Itaú Unibanco ON'),
+        ('ITUB4', 'Itaú Unibanco PN'),
+        ('BBDC3', 'Bradesco ON'),
+        ('BBDC4', 'Bradesco PN'),
+        ('BBAS3', 'Banco do Brasil ON'),
+        ('ABEV3', 'Ambev ON'),
+        ('B3SA3', 'B3 ON'),
+        ('WEGE3', 'WEG ON'),
+        ('RENT3', 'Localiza ON'),
+        ('RAIL3', 'Rumo ON'),
+        ('SUZB3', 'Suzano ON'),
+        ('MGLU3', 'Magazine Luiza ON'),
+        ('LREN3', 'Lojas Renner ON'),
+        ('GGBR4', 'Gerdau PN'),
+        ('USIM5', 'Usiminas PNA'),
+        ('CSNA3', 'CSN ON'),
+        ('ELET3', 'Eletrobras ON'),
+        ('CMIG4', 'Cemig PN'),
+        ('ENBR3', 'Energias BR ON'),
+        ('SANB11', 'Santander BR UNT'),
+        ('BPAC11', 'BTG Pactual UNT'),
+        ('PRIO3', 'Prio ON'),
+    ]
+    
+    resultados = []
+    for ticker, nome in acoes:
+        if query in ticker or query in nome.upper():
             resultados.append({
                 'ticker': ticker,
                 'nome': nome,
                 'label': f"{ticker} - {nome}"
             })
-        
-        return JsonResponse({'resultados': resultados})
-        
-    except Exception as e:
-        return JsonResponse({'resultados': []})
-
+    
+    return JsonResponse({'resultados': resultados[:15]})
 
 @login_required
 @require_http_methods(["GET"])
 def calcular_valuation_api(request):
-    """API para calcular valuation de uma ação"""
+    """API para calcular valuation usando yfinance"""
     from investments.services.valuation import calcular_valuation
     
-    ticker = request.GET.get('ticker', '').strip().upper()
+    ticker = request.GET.get('ticker', '').strip().upper().replace('.SA', '')
     
     if not ticker:
         return JsonResponse({'erro': 'Ticker não informado'}, status=400)
@@ -315,12 +287,13 @@ def calcular_valuation_api(request):
         
     except Exception as e:
         print(f"[ERRO] Calcular valuation: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'erro': str(e)}, status=500)
-
 
 @login_required
 def valuation_page(request):
-    """Página principal de análise de valuation"""
+    """Página de análise de valuation"""
     return render(request, 'investments/valuation.html', {
         'page_title': 'Análise de Valuation'
     })
