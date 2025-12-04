@@ -295,7 +295,7 @@ def buscar_acoes_valuation_api(request):
 @require_http_methods(["GET"])
 def calcular_valuation_api(request):
     """API para calcular valuation de uma ação"""
-    from investments.services.valuation import calcular_valuation, formatar_resultado
+    from investments.services.valuation import calcular_valuation
     
     ticker = request.GET.get('ticker', '').strip().upper()
     
@@ -311,11 +311,11 @@ def calcular_valuation_api(request):
                 'ticker': ticker
             }, status=404)
         
-        return JsonResponse({'resultado': formatar_resultado(resultado)})
+        return JsonResponse({'resultado': resultado})
         
     except Exception as e:
         print(f"[ERRO] Calcular valuation: {e}")
-        return JsonResponse({'erro': 'Erro ao calcular valuation'}, status=500)
+        return JsonResponse({'erro': str(e)}, status=500)
 
 
 @login_required

@@ -194,6 +194,16 @@
         color: var(--primary);
     }
     
+    .metodo-formula {
+        font-size: 0.8rem;
+        color: #6b7280;
+        padding: 10px;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-family: 'Courier New', monospace;
+    }
+    
     .metodo-status {
         padding: 12px;
         border-radius: 8px;
@@ -391,6 +401,40 @@
                 </div>
             </div>
 
+            <!-- Dados Fundamentalistas -->
+            <div class="card p-4 mb-4">
+                <h5 class="mb-3">
+                    <i class="bi bi-bar-chart"></i> Dados Fundamentalistas
+                </h5>
+                
+                <div class="row text-center">
+                    <div class="col-6 col-md-2 mb-3">
+                        <div class="text-muted small mb-1">Preço Atual</div>
+                        <div class="fw-bold fs-5 text-primary" id="dadoPreco">-</div>
+                    </div>
+                    <div class="col-6 col-md-2 mb-3">
+                        <div class="text-muted small mb-1">LPA (EPS)</div>
+                        <div class="fw-bold fs-5" id="dadoEPS">-</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">Lucro por Ação</small>
+                    </div>
+                    <div class="col-6 col-md-2 mb-3">
+                        <div class="text-muted small mb-1">P/L</div>
+                        <div class="fw-bold fs-5" id="dadoPE">-</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">Preço / Lucro</small>
+                    </div>
+                    <div class="col-6 col-md-2 mb-3">
+                        <div class="text-muted small mb-1">ROE</div>
+                        <div class="fw-bold fs-5" id="dadoROE">-</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">Retorno s/ PL</small>
+                    </div>
+                    <div class="col-12 col-md-3 mb-3">
+                        <div class="text-muted small mb-1">Dividend Yield</div>
+                        <div class="fw-bold fs-5" id="dadoDY">-</div>
+                        <small class="text-muted" style="font-size: 0.7rem;">Dividendos Anuais</small>
+                    </div>
+                </div>
+            </div>
+
             <!-- Recomendação Geral -->
             <div class="recomendacao-geral">
                 <div class="recomendacao-explicacao">Recomendação dos métodos:</div>
@@ -424,6 +468,10 @@
                     
                     <div class="metodo-preco" id="bazinPreco">N/A</div>
                     
+                    <div class="metodo-formula" id="bazinFormula">
+                        <i class="bi bi-calculator"></i> Calculando...
+                    </div>
+                    
                     <div class="metodo-margem">
                         <span class="metodo-label">Margem de Segurança:</span>
                         <strong id="bazinMargem">N/A</strong>
@@ -444,6 +492,10 @@
                     </div>
                     
                     <div class="metodo-preco" id="grahamPreco">N/A</div>
+                    
+                    <div class="metodo-formula" id="grahamFormula">
+                        <i class="bi bi-calculator"></i> Calculando...
+                    </div>
                     
                     <div class="metodo-margem">
                         <span class="metodo-label">Margem de Segurança:</span>
@@ -473,6 +525,10 @@
                             <span class="dado-label">Preço Ideal:</span>
                             <span class="dado-valor" id="lynchPreco">N/A</span>
                         </div>
+                    </div>
+                    
+                    <div class="metodo-formula" id="lynchFormula">
+                        <i class="bi bi-calculator"></i> Calculando...
                     </div>
                     
                     <div class="metodo-margem">
@@ -625,7 +681,7 @@ async function calcularValuation(ticker) {
         
     } catch (error) {
         console.error('Erro:', error);
-        mostrarErro('Erro ao calcular valuation');
+        mostrarErro('Erro ao calcular valuation. Verifique se os dados estão disponíveis para esta ação.');
     }
 }
 
@@ -637,6 +693,15 @@ function renderizarResultado(resultado) {
     // Header
     document.getElementById('resultadoTicker').textContent = resultado.ticker;
     document.getElementById('resultadoPreco').textContent = resultado.preco_atual;
+    
+    // Dados Fundamentalistas
+    if (resultado.dados_base) {
+        document.getElementById('dadoPreco').textContent = resultado.dados_base.preco;
+        document.getElementById('dadoEPS').textContent = resultado.dados_base.eps;
+        document.getElementById('dadoPE').textContent = resultado.dados_base.pe;
+        document.getElementById('dadoROE').textContent = resultado.dados_base.roe;
+        document.getElementById('dadoDY').textContent = resultado.dados_base.dy;
+    }
     
     // Recomendação Geral
     const statusEl = document.getElementById('statusGeral');
@@ -669,6 +734,7 @@ function renderizarMetodo(metodo, dados) {
     const precoEl = document.getElementById(metodo + 'Preco');
     const margemEl = document.getElementById(metodo + 'Margem');
     const statusEl = document.getElementById(metodo + 'Status');
+    const formulaEl = document.getElementById(metodo + 'Formula');
     
     // Emoji e cor do card
     const statusLower = dados.status.toLowerCase();
@@ -685,6 +751,11 @@ function renderizarMetodo(metodo, dados) {
         precoEl.style.display = 'block';
         const chavePreco = metodo === 'bazin' ? 'preco_teto' : 'preco_justo';
         precoEl.textContent = dados[chavePreco] || 'N/A';
+    }
+    
+    // Fórmula
+    if (dados.formula) {
+        formulaEl.innerHTML = '<i class="bi bi-calculator"></i> ' + dados.formula;
     }
     
     // Margem

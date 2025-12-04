@@ -13,4 +13,5 @@ urlpatterns = [
     path('valuation/', views.valuation_page, name='valuation'),
     path('api/buscar-acoes-valuation/', views.buscar_acoes_valuation_api, name='buscar_acoes_valuation_api'),
     path('api/calcular-valuation/', views.calcular_valuation_api, name='calcular_valuation_api'),
+    
 ]

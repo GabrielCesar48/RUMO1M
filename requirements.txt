@@ -1,4 +1,5 @@
 asgiref==3.11.0
+beautifulsoup4==4.14.3
 certifi==2025.11.12
 charset-normalizer==3.4.4
 colorama==0.4.6
@@ -14,8 +15,10 @@ python-decouple==3.8
 pytz==2025.2
 requests==2.32.5
 six==1.17.0
+soupsieve==2.8
 sqlparse==0.5.3
 tqdm==4.67.1
+typing_extensions==4.15.0
 tzdata==2025.2
 urllib3==2.5.0
 zope.interface==8.1.1
