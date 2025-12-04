@@ -1,36 +1,129 @@
 {% extends 'base.html' %}
 
-{% block title %}Análise de Valuation - Rumo1M{% endblock %}
+{% block title %}Análise Fundamentalista - Rumo1M{% endblock %}
 
 {% block extra_css %}
 <style>
-    .valuation-container {
-        max-width: 1000px;
+    /* ============================================================
+       PALETA DE CORES MODERNA E PROFISSIONAL
+       ============================================================ */
+    :root {
+        --bg-primary: #f8fafc;
+        --bg-secondary: #ffffff;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --text-muted: #94a3b8;
+        
+        --accent-blue: #3b82f6;
+        --accent-success: #10b981;
+        --accent-warning: #f59e0b;
+        --accent-danger: #ef4444;
+        
+        --border-color: #e2e8f0;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        
+        --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     }
     
+    /* ============================================================
+       LAYOUT GERAL
+       ============================================================ */
+    body {
+        background: var(--bg-primary);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .valuation-container {
+        max-width: 1400px;
+        padding: 20px;
+    }
+    
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 40px 20px;
+        background: var(--bg-secondary);
+        border-radius: 24px;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 10px;
+    }
+    
+    .page-header p {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+    
+    /* ============================================================
+       SEÇÃO DE BUSCA
+       ============================================================ */
     .search-section {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: var(--shadow-md);
         margin-bottom: 30px;
     }
     
-    .autocomplete-container {
+    .search-input-wrapper {
         position: relative;
-        margin-bottom: 20px;
+        max-width: 600px;
+        margin: 0 auto;
     }
     
+    .search-input {
+        width: 100%;
+        padding: 16px 50px 16px 20px;
+        font-size: 1.1rem;
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        transition: all 0.3s;
+        background: var(--bg-primary);
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    
+    .search-icon {
+        position: absolute;
+        right: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        font-size: 1.3rem;
+    }
+    
+    /* Autocomplete */
     .autocomplete-list {
         position: absolute;
-        top: 100%;
+        top: calc(100% + 8px);
         left: 0;
         right: 0;
-        background: white;
-        border: 2px solid #e5e7eb;
-        border-top: none;
-        border-radius: 0 0 12px 12px;
-        max-height: 250px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        max-height: 300px;
         overflow-y: auto;
         z-index: 1000;
+        box-shadow: var(--shadow-lg);
         display: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     .autocomplete-list.active {
@@ -38,14 +131,14 @@
     }
     
     .autocomplete-item {
-        padding: 12px 16px;
+        padding: 14px 18px;
         cursor: pointer;
-        border-bottom: 1px solid #f3f4f6;
         transition: background 0.2s;
+        border-bottom: 1px solid var(--border-color);
     }
     
     .autocomplete-item:hover {
-        background: #f9fafb;
+        background: var(--bg-primary);
     }
     
     .autocomplete-item:last-child {
@@ -53,301 +146,461 @@
     }
     
     .autocomplete-item strong {
-        color: var(--primary);
-        font-weight: 700;
+        color: var(--accent-blue);
+        font-weight: 600;
     }
     
-    .autocomplete-item small {
-        color: #6b7280;
-    }
-    
+    /* ============================================================
+       RESULTADO - LAYOUT
+       ============================================================ */
     .resultado-section {
         display: none;
-        animation: slideIn 0.3s ease-out;
     }
     
     .resultado-section.active {
         display: block;
+        animation: fadeIn 0.5s ease-out;
     }
     
-    .header-acao {
-        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* ============================================================
+       HEADER DA AÇÃO
+       ============================================================ */
+    .stock-header {
+        background: var(--gradient-primary);
         color: white;
-        padding: 25px;
-        border-radius: 20px;
+        border-radius: 24px;
+        padding: 40px;
         margin-bottom: 30px;
+        box-shadow: var(--shadow-lg);
     }
     
-    .header-acao h1 {
-        margin: 0;
-        font-size: 2.5rem;
+    .stock-header h1 {
+        font-size: 3rem;
         font-weight: 800;
+        margin: 0 0 10px 0;
     }
     
-    .header-acao .preco-atual {
-        font-size: 1.8rem;
-        margin-top: 10px;
-        font-weight: 700;
+    .stock-price {
+        font-size: 2rem;
+        font-weight: 600;
+        opacity: 0.95;
     }
     
-    .metodos-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
-    
-    .metodo-card {
-        background: white;
-        border-radius: 20px;
-        padding: 25px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border: 2px solid transparent;
-        transition: transform 0.2s, border-color 0.2s;
-    }
-    
-    .metodo-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .metodo-card.comprar {
-        border-color: #10b981;
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
-    }
-    
-    .metodo-card.vender {
-        border-color: #ef4444;
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
-    }
-    
-    .metodo-card.aguardar {
-        border-color: #eab308;
-        background: linear-gradient(135deg, rgba(234, 179, 8, 0.05) 0%, rgba(234, 179, 8, 0.02) 100%);
-    }
-    
-    .metodo-titulo {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .metodo-descricao {
-        font-size: 0.85rem;
-        color: #6b7280;
-        margin-bottom: 15px;
-        line-height: 1.5;
-    }
-    
-    .metodo-dados {
-        background: white;
-        padding: 15px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-    }
-    
-    .dado-linha {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 10px;
-        font-size: 0.95rem;
-    }
-    
-    .dado-linha:last-child {
-        margin-bottom: 0;
-    }
-    
-    .dado-label {
-        color: #6b7280;
-        font-weight: 500;
-    }
-    
-    .dado-valor {
-        font-weight: 700;
-        color: var(--primary);
-    }
-    
-    .metodo-preco {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: var(--primary);
-        margin-bottom: 12px;
-        padding: 12px;
-        background: rgba(16, 185, 129, 0.1);
-        border-radius: 8px;
-        text-align: center;
-    }
-    
-    .metodo-margem {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px;
-        background: rgba(16, 185, 129, 0.1);
-        border-radius: 8px;
-        margin-bottom: 12px;
-    }
-    
-    .metodo-margem strong {
-        color: var(--primary);
-    }
-    
-    .metodo-formula {
-        font-size: 0.8rem;
-        color: #6b7280;
-        padding: 10px;
-        background: #f9fafb;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        font-family: 'Courier New', monospace;
-    }
-    
-    .metodo-status {
-        padding: 12px;
-        border-radius: 8px;
-        text-align: center;
-        font-weight: 700;
-        font-size: 1.1rem;
-    }
-    
-    .status-comprar {
-        background: #d1fae5;
-        color: #065f46;
-    }
-    
-    .status-vender {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-    
-    .status-aguardar {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    
-    .recomendacao-geral {
-        background: white;
+    /* ============================================================
+       DADOS FUNDAMENTALISTAS
+       ============================================================ */
+    .fundamentals-card {
+        background: var(--bg-secondary);
         border-radius: 20px;
         padding: 30px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        box-shadow: var(--shadow-md);
+        margin-bottom: 30px;
+    }
+    
+    .fundamentals-card h5 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 25px;
+    }
+    
+    .fundamentals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+    }
+    
+    .fundamental-item {
+        text-align: center;
+        padding: 20px;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        transition: transform 0.2s;
+    }
+    
+    .fundamental-item:hover {
+        transform: translateY(-4px);
+    }
+    
+    .fundamental-label {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    
+    .fundamental-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+    
+    .fundamental-subtitle {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+    
+    /* ============================================================
+       ANÁLISE DA IA ESPECIALISTA
+       ============================================================ */
+    .ai-analysis-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 35px;
+        box-shadow: var(--shadow-lg);
+        margin-bottom: 30px;
+    }
+    
+    .ai-analysis-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .ai-analysis-header i {
+        font-size: 2.5rem;
+    }
+    
+    .ai-analysis-header h5 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .ai-analysis-content {
+        font-size: 1.05rem;
+        line-height: 1.7;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* ============================================================
+       NOTÍCIAS
+       ============================================================ */
+    .news-card {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 30px;
+    }
+    
+    .news-card h5 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+    }
+    
+    .news-content {
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--text-secondary);
+        padding: 20px;
+        background: var(--bg-primary);
+        border-radius: 12px;
+        border-left: 4px solid var(--accent-blue);
+    }
+    
+    /* ============================================================
+       RECOMENDAÇÃO GERAL
+       ============================================================ */
+    .recommendation-card {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: var(--shadow-lg);
         text-align: center;
         margin-bottom: 30px;
     }
     
-    .recomendacao-status {
-        font-size: 2.5rem;
+    .recommendation-status {
+        font-size: 3rem;
         font-weight: 900;
         margin: 20px 0;
     }
     
-    .recomendacao-status.comprar {
-        color: #10b981;
+    .recommendation-status.comprar {
+        color: var(--accent-success);
     }
     
-    .recomendacao-status.vender {
-        color: #ef4444;
+    .recommendation-status.vender {
+        color: var(--accent-danger);
     }
     
-    .recomendacao-status.aguardar {
-        color: #eab308;
+    .recommendation-status.aguardar {
+        color: var(--accent-warning);
     }
     
-    .recomendacao-explicacao {
-        color: #6b7280;
-        font-size: 1.1rem;
-        margin-bottom: 20px;
-    }
-    
-    .votos-container {
+    .recommendation-votes {
         display: flex;
         justify-content: center;
-        gap: 30px;
-        flex-wrap: wrap;
+        gap: 40px;
+        margin-top: 25px;
     }
     
-    .voto-item {
+    .vote-item {
         text-align: center;
     }
     
-    .voto-numero {
-        font-size: 2rem;
-        font-weight: 900;
-        color: var(--primary);
+    .vote-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--accent-blue);
     }
     
-    .voto-label {
+    .vote-label {
         font-size: 0.9rem;
-        color: #6b7280;
+        color: var(--text-secondary);
         margin-top: 5px;
     }
     
-    .loading {
-        text-align: center;
-        padding: 40px;
-        color: #6b7280;
+    /* ============================================================
+       MÉTODOS - GRID
+       ============================================================ */
+    .methods-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 25px;
+        margin-bottom: 30px;
     }
     
-    .loading-spinner {
-        border: 4px solid #e5e7eb;
-        border-top: 4px solid var(--primary);
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 1s linear infinite;
-        margin: 0 auto 15px;
+    .method-card {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: var(--shadow-md);
+        border: 2px solid transparent;
+        transition: all 0.3s;
     }
     
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    .method-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
     }
     
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .method-card.comprar {
+        border-color: var(--accent-success);
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(16, 185, 129, 0.02) 100%);
     }
     
-    .emoji {
-        display: inline-block;
-        font-size: 1.2em;
+    .method-card.vender {
+        border-color: var(--accent-danger);
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
     }
     
-    .erro-message {
-        background: #fee2e2;
-        border-left: 4px solid #ef4444;
-        color: #991b1b;
-        padding: 15px;
-        border-radius: 8px;
+    .method-card.aguardar {
+        border-color: var(--accent-warning);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(245, 158, 11, 0.02) 100%);
+    }
+    
+    .method-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+    }
+    
+    .method-emoji {
+        font-size: 2rem;
+    }
+    
+    .method-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    
+    .method-description {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
         margin-bottom: 20px;
     }
     
+    .method-price {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--accent-blue);
+        margin-bottom: 15px;
+        padding: 15px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .method-formula {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        padding: 12px;
+        background: var(--bg-primary);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-family: 'Monaco', 'Courier New', monospace;
+    }
+    
+    .method-margin {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .method-margin-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+    }
+    
+    .method-margin-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent-blue);
+    }
+    
+    .method-status {
+        padding: 14px;
+        border-radius: 10px;
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    
+    .method-status.comprar {
+        background: var(--gradient-success);
+        color: white;
+    }
+    
+    .method-status.vender {
+        background: var(--gradient-danger);
+        color: white;
+    }
+    
+    .method-status.aguardar {
+        background: var(--gradient-warning);
+        color: white;
+    }
+    
+    /* ============================================================
+       LOADING & ERRO
+       ============================================================ */
+    .loading-container {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid var(--border-color);
+        border-top-color: var(--accent-blue);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+    }
+    
+    .error-card {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+        border-left: 4px solid var(--accent-danger);
+        color: var(--accent-danger);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+    
+    /* ============================================================
+       EXPLICAÇÕES
+       ============================================================ */
+    .info-card {
+        background: var(--bg-secondary);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .info-card h5 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .info-item h6 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .info-item.success h6 { color: var(--accent-success); }
+    .info-item.warning h6 { color: var(--accent-warning); }
+    .info-item.danger h6 { color: var(--accent-danger); }
+    
+    .info-item p {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+    
+    /* ============================================================
+       RESPONSIVO
+       ============================================================ */
     @media (max-width: 768px) {
-        .header-acao h1 {
+        .page-header h1 {
             font-size: 1.8rem;
         }
         
-        .header-acao .preco-atual {
-            font-size: 1.3rem;
-        }
-        
-        .metodos-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .recomendacao-status {
+        .stock-header h1 {
             font-size: 2rem;
         }
         
-        .votos-container {
-            gap: 15px;
+        .stock-price {
+            font-size: 1.5rem;
+        }
+        
+        .methods-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .fundamentals-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .recommendation-status {
+            font-size: 2rem;
+        }
+        
+        .recommendation-votes {
+            gap: 20px;
         }
     }
 </style>
@@ -355,228 +608,192 @@
 
 {% block content %}
 <div class="valuation-container">
-    <!-- Cabeçalho -->
-    <div class="mb-4">
-        <h1 class="mb-2">
-            <i class="bi bi-graph-up-arrow"></i> Análise de Valuation
-        </h1>
-        <p class="text-muted">Compare 3 métodos de valuation (Bazin, Graham e Lynch) para tomar decisões mais informadas</p>
+    
+    <!-- Header -->
+    <div class="page-header">
+        <h1>📊 Análise Fundamentalista</h1>
+        <p>Valuation profissional com 3 metodologias + Análise IA + Notícias</p>
     </div>
 
-    <!-- Seção de Busca -->
-    <div class="search-section card p-4 mb-4">
-        <h5 class="mb-3">
-            <i class="bi bi-search"></i> Buscar Ação
-        </h5>
-        
-        <div class="autocomplete-container">
-            <input type="text" 
-                   id="inputBusca" 
-                   class="form-control form-control-lg" 
-                   placeholder="Digite o ticker ou nome da empresa (ex: PETR4, Vale)...">
+    <!-- Busca -->
+    <div class="search-section">
+        <div class="search-input-wrapper">
+            <input 
+                type="text" 
+                id="inputBusca" 
+                class="search-input" 
+                placeholder="Digite o ticker da ação (ex: PETR4, VALE3, ITUB4)..."
+                autocomplete="off">
+            <i class="bi bi-search search-icon"></i>
             <div id="autocompleteList" class="autocomplete-list"></div>
         </div>
     </div>
 
-    <!-- Seção de Resultado (inicialmente oculta) -->
+    <!-- Resultado -->
     <div id="resultadoSection" class="resultado-section">
         
         <!-- Erro -->
-        <div id="erroDiv" style="display: none;" class="erro-message"></div>
+        <div id="erroDiv" style="display: none;" class="error-card"></div>
         
         <!-- Loading -->
-        <div id="loadingDiv" style="display: none;" class="loading">
+        <div id="loadingDiv" style="display: none;" class="loading-container">
             <div class="loading-spinner"></div>
-            <p>Calculando valuation...</p>
+            <p class="loading-text">Analisando ação e buscando notícias...</p>
         </div>
         
-        <!-- Resultado -->
+        <!-- Conteúdo -->
         <div id="conteudoResultado" style="display: none;">
             
             <!-- Header da Ação -->
-            <div class="header-acao">
+            <div class="stock-header">
                 <h1 id="resultadoTicker"></h1>
-                <div class="preco-atual">
-                    Preço Atual: <span id="resultadoPreco"></span>
-                </div>
+                <div class="stock-price" id="resultadoPreco"></div>
             </div>
 
             <!-- Dados Fundamentalistas -->
-            <div class="card p-4 mb-4">
-                <h5 class="mb-3">
-                    <i class="bi bi-bar-chart"></i> Dados Fundamentalistas
-                </h5>
-                
-                <div class="row text-center">
-                    <div class="col-6 col-md-2 mb-3">
-                        <div class="text-muted small mb-1">Preço Atual</div>
-                        <div class="fw-bold fs-5 text-primary" id="dadoPreco">-</div>
+            <div class="fundamentals-card">
+                <h5><i class="bi bi-bar-chart-line"></i> Dados Fundamentalistas</h5>
+                <div class="fundamentals-grid">
+                    <div class="fundamental-item">
+                        <div class="fundamental-label">Preço Atual</div>
+                        <div class="fundamental-value" id="dadoPreco">-</div>
                     </div>
-                    <div class="col-6 col-md-2 mb-3">
-                        <div class="text-muted small mb-1">LPA (EPS)</div>
-                        <div class="fw-bold fs-5" id="dadoEPS">-</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">Lucro por Ação</small>
+                    <div class="fundamental-item">
+                        <div class="fundamental-label">LPA (EPS)</div>
+                        <div class="fundamental-value" id="dadoEPS">-</div>
+                        <div class="fundamental-subtitle">Lucro por Ação</div>
                     </div>
-                    <div class="col-6 col-md-2 mb-3">
-                        <div class="text-muted small mb-1">P/L</div>
-                        <div class="fw-bold fs-5" id="dadoPE">-</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">Preço / Lucro</small>
+                    <div class="fundamental-item">
+                        <div class="fundamental-label">P/L</div>
+                        <div class="fundamental-value" id="dadoPE">-</div>
+                        <div class="fundamental-subtitle">Preço / Lucro</div>
                     </div>
-                    <div class="col-6 col-md-2 mb-3">
-                        <div class="text-muted small mb-1">ROE</div>
-                        <div class="fw-bold fs-5" id="dadoROE">-</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">Retorno s/ PL</small>
+                    <div class="fundamental-item">
+                        <div class="fundamental-label">ROE</div>
+                        <div class="fundamental-value" id="dadoROE">-</div>
+                        <div class="fundamental-subtitle">Retorno s/ PL</div>
                     </div>
-                    <div class="col-12 col-md-3 mb-3">
-                        <div class="text-muted small mb-1">Dividend Yield</div>
-                        <div class="fw-bold fs-5" id="dadoDY">-</div>
-                        <small class="text-muted" style="font-size: 0.7rem;">Dividendos Anuais</small>
+                    <div class="fundamental-item">
+                        <div class="fundamental-label">Dividend Yield</div>
+                        <div class="fundamental-value" id="dadoDY">-</div>
+                        <div class="fundamental-subtitle">Dividendos Anuais</div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Análise da IA Especialista -->
+            <div class="ai-analysis-card">
+                <div class="ai-analysis-header">
+                    <i class="bi bi-robot"></i>
+                    <h5>Análise do Especialista IA</h5>
+                </div>
+                <div class="ai-analysis-content" id="aiAnalysis">
+                    Carregando análise...
+                </div>
+            </div>
+
+            <!-- Notícias -->
+            <div class="news-card">
+                <h5><i class="bi bi-newspaper"></i> Últimas Notícias</h5>
+                <div class="news-content" id="newsContent">
+                    Carregando notícias...
                 </div>
             </div>
 
             <!-- Recomendação Geral -->
-            <div class="recomendacao-geral">
-                <div class="recomendacao-explicacao">Recomendação dos métodos:</div>
-                <div class="recomendacao-status" id="statusGeral"></div>
-                
-                <div class="votos-container">
-                    <div class="voto-item">
-                        <div class="voto-numero" id="pontosCompra">0</div>
-                        <div class="voto-label">Métodos para COMPRAR</div>
+            <div class="recommendation-card">
+                <h5>Recomendação Consolidada</h5>
+                <div class="recommendation-status" id="statusGeral"></div>
+                <div class="recommendation-votes">
+                    <div class="vote-item">
+                        <div class="vote-number" id="pontosCompra">0</div>
+                        <div class="vote-label">Métodos para COMPRAR</div>
                     </div>
-                    <div class="voto-item">
-                        <div class="voto-numero" id="pontosVenda">0</div>
-                        <div class="voto-label">Métodos para VENDER</div>
+                    <div class="vote-item">
+                        <div class="vote-number" id="pontosVenda">0</div>
+                        <div class="vote-label">Métodos para VENDER</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Cards dos Métodos -->
-            <div class="metodos-grid">
+            <!-- Métodos -->
+            <div class="methods-grid">
                 
                 <!-- BAZIN -->
-                <div class="metodo-card" id="bazinCard">
-                    <div class="metodo-titulo">
-                        <span class="emoji" id="bazinEmoji">🟡</span>
-                        Método Bazin
+                <div class="method-card" id="bazinCard">
+                    <div class="method-header">
+                        <span class="method-emoji" id="bazinEmoji">🟡</span>
+                        <h6 class="method-title">Método Bazin</h6>
                     </div>
-                    
-                    <div class="metodo-descricao">
-                        Preço-teto baseado em Dividend Yield (DY 6%)
+                    <p class="method-description">Preço-teto baseado em Dividend Yield (6% a.a.)</p>
+                    <div class="method-price" id="bazinPreco">N/A</div>
+                    <div class="method-formula" id="bazinFormula">Calculando...</div>
+                    <div class="method-margin">
+                        <span class="method-margin-label">Margem de Segurança:</span>
+                        <span class="method-margin-value" id="bazinMargem">N/A</span>
                     </div>
-                    
-                    <div class="metodo-preco" id="bazinPreco">N/A</div>
-                    
-                    <div class="metodo-formula" id="bazinFormula">
-                        <i class="bi bi-calculator"></i> Calculando...
-                    </div>
-                    
-                    <div class="metodo-margem">
-                        <span class="metodo-label">Margem de Segurança:</span>
-                        <strong id="bazinMargem">N/A</strong>
-                    </div>
-                    
-                    <div class="metodo-status" id="bazinStatus">DADOS INSUFICIENTES</div>
+                    <div class="method-status" id="bazinStatus">DADOS INSUFICIENTES</div>
                 </div>
                 
                 <!-- GRAHAM -->
-                <div class="metodo-card" id="grahamCard">
-                    <div class="metodo-titulo">
-                        <span class="emoji" id="grahamEmoji">🟡</span>
-                        Método Graham
+                <div class="method-card" id="grahamCard">
+                    <div class="method-header">
+                        <span class="method-emoji" id="grahamEmoji">🟡</span>
+                        <h6 class="method-title">Método Graham</h6>
                     </div>
-                    
-                    <div class="metodo-descricao">
-                        Preço justo usando P/L (PE 15x)
+                    <p class="method-description">Preço justo usando P/L e VPA</p>
+                    <div class="method-price" id="grahamPreco">N/A</div>
+                    <div class="method-formula" id="grahamFormula">Calculando...</div>
+                    <div class="method-margin">
+                        <span class="method-margin-label">Margem de Segurança:</span>
+                        <span class="method-margin-value" id="grahamMargem">N/A</span>
                     </div>
-                    
-                    <div class="metodo-preco" id="grahamPreco">N/A</div>
-                    
-                    <div class="metodo-formula" id="grahamFormula">
-                        <i class="bi bi-calculator"></i> Calculando...
-                    </div>
-                    
-                    <div class="metodo-margem">
-                        <span class="metodo-label">Margem de Segurança:</span>
-                        <strong id="grahamMargem">N/A</strong>
-                    </div>
-                    
-                    <div class="metodo-status" id="grahamStatus">DADOS INSUFICIENTES</div>
+                    <div class="method-status" id="grahamStatus">DADOS INSUFICIENTES</div>
                 </div>
                 
                 <!-- LYNCH -->
-                <div class="metodo-card" id="lynchCard">
-                    <div class="metodo-titulo">
-                        <span class="emoji" id="lynchEmoji">🟡</span>
-                        Método Lynch (PEG)
+                <div class="method-card" id="lynchCard">
+                    <div class="method-header">
+                        <span class="method-emoji" id="lynchEmoji">🟡</span>
+                        <h6 class="method-title">Método Lynch (PEG)</h6>
                     </div>
-                    
-                    <div class="metodo-descricao">
-                        P/E Ratio ÷ Taxa de Crescimento (ROE)
+                    <p class="method-description">P/E Ratio ÷ Taxa de Crescimento (ROE)</p>
+                    <div class="method-price">
+                        <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 5px;">PEG Ratio</div>
+                        <span id="lynchPeg">N/A</span>
                     </div>
-                    
-                    <div class="metodo-dados">
-                        <div class="dado-linha">
-                            <span class="dado-label">PEG Ratio:</span>
-                            <span class="dado-valor" id="lynchPeg">N/A</span>
-                        </div>
-                        <div class="dado-linha">
-                            <span class="dado-label">Preço Ideal:</span>
-                            <span class="dado-valor" id="lynchPreco">N/A</span>
-                        </div>
+                    <div class="method-formula" id="lynchFormula">Calculando...</div>
+                    <div class="method-margin">
+                        <span class="method-margin-label">Preço Ideal:</span>
+                        <span class="method-margin-value" id="lynchPreco">N/A</span>
                     </div>
-                    
-                    <div class="metodo-formula" id="lynchFormula">
-                        <i class="bi bi-calculator"></i> Calculando...
-                    </div>
-                    
-                    <div class="metodo-margem">
-                        <span class="metodo-label">Margem:</span>
-                        <strong id="lynchMargem">N/A</strong>
-                    </div>
-                    
-                    <div class="metodo-status" id="lynchStatus">DADOS INSUFICIENTES</div>
+                    <div class="method-status" id="lynchStatus">DADOS INSUFICIENTES</div>
                 </div>
                 
             </div>
 
             <!-- Explicações -->
-            <div class="card p-4 mt-4">
-                <h5 class="mb-3">📚 Como Interpretar os Resultados</h5>
-                
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <h6 class="text-success">
-                            <i class="bi bi-check-circle"></i> COMPRAR
-                        </h6>
-                        <p class="small">Ação com preço abaixo do calculado. Boa oportunidade para iniciar ou aumentar posição.</p>
+            <div class="info-card">
+                <h5>📚 Como Interpretar os Resultados</h5>
+                <div class="info-grid">
+                    <div class="info-item success">
+                        <h6><i class="bi bi-check-circle"></i> COMPRAR</h6>
+                        <p>Ação com preço abaixo do calculado. Boa oportunidade de entrada.</p>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <h6 class="text-warning">
-                            <i class="bi bi-pause-circle"></i> AGUARDAR
-                        </h6>
-                        <p class="small">Preço próximo ao justo. Espere por uma melhor oportunidade de entrada.</p>
+                    <div class="info-item warning">
+                        <h6><i class="bi bi-pause-circle"></i> AGUARDAR</h6>
+                        <p>Preço próximo ao justo. Aguarde melhor oportunidade.</p>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <h6 class="text-danger">
-                            <i class="bi bi-x-circle"></i> VENDER
-                        </h6>
-                        <p class="small">Ação acima do preço considerado justo. Considere reduzir a posição.</p>
+                    <div class="info-item danger">
+                        <h6><i class="bi bi-x-circle"></i> VENDER</h6>
+                        <p>Ação acima do preço justo. Considere realizar lucro.</p>
                     </div>
                 </div>
-                
-                <hr>
-                
-                <h6 class="mb-2">Sobre os Métodos:</h6>
-                <p class="small text-muted mb-2">
-                    <strong>Bazin:</strong> Ideal para ações pagadoras de dividendos. Baseado em Dividend Yield de 6%.
-                </p>
-                <p class="small text-muted mb-2">
-                    <strong>Graham:</strong> Método clássico de análise fundamental. Usa P/L e ROE.
-                </p>
-                <p class="small text-muted">
-                    <strong>Lynch (PEG):</strong> Compara o P/L com a taxa de crescimento. PEG &lt; 1 = Subavaliado.
+                <hr style="border-color: var(--border-color); margin: 25px 0;">
+                <p style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin: 0;">
+                    <strong>Bazin:</strong> Ideal para dividendos (DY 6%)  •  
+                    <strong>Graham:</strong> Análise fundamental clássica  •  
+                    <strong>Lynch:</strong> Compara P/L com crescimento (PEG < 1 = subavaliado)
                 </p>
             </div>
 
@@ -588,30 +805,26 @@
 
 {% block extra_js %}
 <script>
+// Estado global
 const state = {
-    acoes: [],
-    resultadoAtual: null,
     timeout: null
 };
 
 // ============================================================
 // AUTOCOMPLETE
 // ============================================================
-
 document.getElementById('inputBusca').addEventListener('input', function(e) {
     clearTimeout(state.timeout);
     const query = e.target.value.trim();
     
-    if (query.length < 1) {
+    if (query.length < 2) {
         document.getElementById('autocompleteList').classList.remove('active');
         return;
     }
     
     state.timeout = setTimeout(async function() {
         try {
-            const response = await fetch(
-                '/investments/api/buscar-acoes-valuation/?q=' + encodeURIComponent(query)
-            );
+            const response = await fetch('/investments/api/buscar-acoes-valuation/?q=' + encodeURIComponent(query));
             const data = await response.json();
             
             if (data.resultados && data.resultados.length > 0) {
@@ -627,25 +840,20 @@ document.getElementById('inputBusca').addEventListener('input', function(e) {
 
 function renderizarAutocomplete(acoes) {
     const list = document.getElementById('autocompleteList');
-    state.acoes = acoes;
     
     let html = '';
-    for (let i = 0; i < acoes.length; i++) {
-        const acao = acoes[i];
-        html += '<div class="autocomplete-item" data-ticker="' + acao.ticker + '">';
-        html += '<strong>' + acao.ticker + '</strong> ';
-        html += '<small>' + acao.nome + '</small>';
-        html += '</div>';
+    for (let acao of acoes) {
+        html += `<div class="autocomplete-item" data-ticker="${acao.ticker}">`;
+        html += `<strong>${acao.ticker}</strong> - ${acao.nome}`;
+        html += `</div>`;
     }
     
     list.innerHTML = html;
     list.classList.add('active');
     
-    // Adicionar listeners
-    document.querySelectorAll('.autocomplete-item').forEach(function(item) {
+    document.querySelectorAll('.autocomplete-item').forEach(item => {
         item.addEventListener('click', function() {
-            const ticker = this.dataset.ticker;
-            selecionarAcao(ticker);
+            selecionarAcao(this.dataset.ticker);
         });
     });
 }
@@ -653,8 +861,6 @@ function renderizarAutocomplete(acoes) {
 function selecionarAcao(ticker) {
     document.getElementById('inputBusca').value = ticker;
     document.getElementById('autocompleteList').classList.remove('active');
-    
-    // Mostrar loading e calcular
     mostrarLoading();
     calcularValuation(ticker);
 }
@@ -662,12 +868,9 @@ function selecionarAcao(ticker) {
 // ============================================================
 // CALCULAR VALUATION
 // ============================================================
-
 async function calcularValuation(ticker) {
     try {
-        const response = await fetch(
-            '/investments/api/calcular-valuation/?ticker=' + encodeURIComponent(ticker)
-        );
+        const response = await fetch('/investments/api/calcular-valuation/?ticker=' + encodeURIComponent(ticker));
         
         if (!response.ok) {
             const data = await response.json();
@@ -676,49 +879,48 @@ async function calcularValuation(ticker) {
         }
         
         const data = await response.json();
-        state.resultadoAtual = data.resultado;
         renderizarResultado(data.resultado);
         
     } catch (error) {
         console.error('Erro:', error);
-        mostrarErro('Erro ao calcular valuation. Verifique se os dados estão disponíveis para esta ação.');
+        mostrarErro('Erro ao processar análise. Tente novamente.');
     }
 }
 
 // ============================================================
 // RENDERIZAR RESULTADO
 // ============================================================
-
 function renderizarResultado(resultado) {
     // Header
     document.getElementById('resultadoTicker').textContent = resultado.ticker;
     document.getElementById('resultadoPreco').textContent = resultado.preco_atual;
     
-    // Dados Fundamentalistas
+    // Dados fundamentalistas
     if (resultado.dados_base) {
         document.getElementById('dadoPreco').textContent = resultado.dados_base.preco;
-        document.getElementById('dadoEPS').textContent = resultado.dados_base.eps;
-        document.getElementById('dadoPE').textContent = resultado.dados_base.pe;
+        document.getElementById('dadoEPS').textContent = resultado.dados_base.lpa;
+        document.getElementById('dadoPE').textContent = resultado.dados_base.pl;
         document.getElementById('dadoROE').textContent = resultado.dados_base.roe;
         document.getElementById('dadoDY').textContent = resultado.dados_base.dy;
     }
     
-    // Recomendação Geral
+    // Análise IA
+    document.getElementById('aiAnalysis').textContent = resultado.ai_analysis || 'Análise não disponível';
+    
+    // Notícias
+    document.getElementById('newsContent').textContent = resultado.news_summary || 'Notícias não disponíveis';
+    
+    // Recomendação geral
     const statusEl = document.getElementById('statusGeral');
-    const statusClass = resultado.recomendacao.status.toLowerCase();
     statusEl.textContent = resultado.recomendacao.emoji + ' ' + resultado.recomendacao.status;
-    statusEl.className = 'recomendacao-status ' + statusClass;
+    statusEl.className = 'recommendation-status ' + resultado.recomendacao.status.toLowerCase();
     
     document.getElementById('pontosCompra').textContent = resultado.recomendacao.pontos_compra;
     document.getElementById('pontosVenda').textContent = resultado.recomendacao.pontos_venda;
     
-    // BAZIN
+    // Métodos
     renderizarMetodo('bazin', resultado.bazin);
-    
-    // GRAHAM
     renderizarMetodo('graham', resultado.graham);
-    
-    // LYNCH
     renderizarMetodo('lynch', resultado.lynch);
     
     // Mostrar resultado
@@ -736,34 +938,26 @@ function renderizarMetodo(metodo, dados) {
     const statusEl = document.getElementById(metodo + 'Status');
     const formulaEl = document.getElementById(metodo + 'Formula');
     
-    // Emoji e cor do card
     const statusLower = dados.status.toLowerCase();
     emojiEl.textContent = dados.emoji;
-    card.classList.remove('comprar', 'vender', 'aguardar');
-    card.classList.add(statusLower);
+    card.className = 'method-card ' + statusLower;
     
-    // Preço/PEG
     if (metodo === 'lynch') {
-        precoEl.style.display = 'none';
         document.getElementById('lynchPeg').textContent = dados.peg || 'N/A';
         document.getElementById('lynchPreco').textContent = dados.preco_ideal || 'N/A';
     } else {
-        precoEl.style.display = 'block';
         const chavePreco = metodo === 'bazin' ? 'preco_teto' : 'preco_justo';
         precoEl.textContent = dados[chavePreco] || 'N/A';
     }
     
-    // Fórmula
     if (dados.formula) {
         formulaEl.innerHTML = '<i class="bi bi-calculator"></i> ' + dados.formula;
     }
     
-    // Margem
     margemEl.textContent = dados.margem || 'N/A';
     
-    // Status
     statusEl.textContent = dados.emoji + ' ' + dados.status;
-    statusEl.className = 'metodo-status status-' + statusLower;
+    statusEl.className = 'method-status ' + statusLower;
 }
 
 function mostrarLoading() {

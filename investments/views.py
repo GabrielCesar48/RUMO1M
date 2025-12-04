@@ -6,6 +6,7 @@ from .models import Aporte, Lancamento
 from .forms import AporteForm
 from decimal import Decimal
 from django.views.decorators.http import require_http_methods
+from investments.services.valuation_openai import calcular_valuation
 
 @login_required
 def adicionar_aporte(request):
@@ -266,20 +267,21 @@ def buscar_acoes_valuation_api(request):
 @login_required
 @require_http_methods(["GET"])
 def calcular_valuation_api(request):
-    """API para calcular valuation usando yfinance"""
-    from investments.services.valuation import calcular_valuation
-    
+    """
+    API para calcular valuation usando OpenAI + Investidor10
+    """
     ticker = request.GET.get('ticker', '').strip().upper().replace('.SA', '')
     
     if not ticker:
         return JsonResponse({'erro': 'Ticker não informado'}, status=400)
     
     try:
+        print(f"[API] Calculando valuation de {ticker}...")
         resultado = calcular_valuation(ticker)
         
         if not resultado:
             return JsonResponse({
-                'erro': 'Ação não encontrada ou dados insuficientes',
+                'erro': 'Não foi possível extrair dados do Investidor10 para esta ação',
                 'ticker': ticker
             }, status=404)
         
@@ -289,7 +291,10 @@ def calcular_valuation_api(request):
         print(f"[ERRO] Calcular valuation: {e}")
         import traceback
         traceback.print_exc()
-        return JsonResponse({'erro': str(e)}, status=500)
+        return JsonResponse({
+            'erro': 'Erro ao calcular valuation. Verifique se a ação existe no Investidor10.',
+            'detalhes': str(e)
+        }, status=500)
 
 @login_required
 def valuation_page(request):
