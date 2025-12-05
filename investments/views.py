@@ -6,7 +6,6 @@ from .models import Aporte, Lancamento, PlanejamentoMensal
 from .forms import AporteForm
 from decimal import Decimal
 from django.views.decorators.http import require_http_methods
-from investments.services.valuation_openai import calcular_valuation
 
 
 @login_required
@@ -317,6 +316,7 @@ def buscar_acoes_valuation_api(request):
 def calcular_valuation_api(request):
     """
     API para calcular valuation usando OpenAI + Investidor10
+    IMPORTANTE: Importa da versão correta (valuation_openai.py)
     """
     ticker = request.GET.get('ticker', '').strip().upper().replace('.SA', '')
     
@@ -325,23 +325,40 @@ def calcular_valuation_api(request):
     
     try:
         print(f"[API] Calculando valuation de {ticker}...")
+        
+        # ✅ IMPORTAÇÃO CORRETA - Mesma que funciona no teste.py
+        from investments.services.valuation_openai import calcular_valuation
+        
+        # Chamar função que usa OpenAI + Web Scraping
         resultado = calcular_valuation(ticker)
         
         if not resultado:
             return JsonResponse({
                 'erro': 'Não foi possível extrair dados do Investidor10 para esta ação',
-                'ticker': ticker
+                'ticker': ticker,
+                'detalhes': 'A IA não conseguiu extrair os dados fundamentalistas do site'
             }, status=404)
         
+        print(f"[API] ✅ Valuation calculado com sucesso para {ticker}")
         return JsonResponse({'resultado': resultado})
+        
+    except ImportError as e:
+        print(f"[ERRO IMPORT] {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'erro': 'Erro ao importar módulo de valuation',
+            'detalhes': str(e)
+        }, status=500)
         
     except Exception as e:
         print(f"[ERRO] Calcular valuation: {e}")
         import traceback
         traceback.print_exc()
         return JsonResponse({
-            'erro': 'Erro ao calcular valuation. Verifique se a ação existe no Investidor10.',
-            'detalhes': str(e)
+            'erro': 'Erro ao calcular valuation',
+            'detalhes': str(e),
+            'tipo_erro': type(e).__name__
         }, status=500)
 
 

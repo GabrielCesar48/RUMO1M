@@ -733,7 +733,7 @@
                 <div class="method-formula" id="lynchFormula">Calculando...</div>
                 <div class="method-margin">
                     <span class="method-margin-label">Preço Ideal:</span>
-                    <span class="method-margin-value" id="lynchPreco">N/A</span>
+                    <span class="method-margin-value" id="lynchPrecoIdeal">N/A</span>
                 </div>
                 <div class="method-status" id="lynchStatus">DADOS INSUFICIENTES</div>
             </div>
@@ -845,9 +845,11 @@ async function calcularValuation(ticker) {
 }
 
 function renderizarResultado(resultado) {
+    // Header
     document.getElementById('resultadoTicker').textContent = resultado.ticker;
     document.getElementById('resultadoPreco').textContent = resultado.preco_atual;
     
+    // Dados base
     if (resultado.dados_base) {
         document.getElementById('dadoPreco').textContent = resultado.dados_base.preco;
         document.getElementById('dadoEPS').textContent = resultado.dados_base.lpa;
@@ -856,9 +858,11 @@ function renderizarResultado(resultado) {
         document.getElementById('dadoDY').textContent = resultado.dados_base.dy;
     }
     
+    // IA e Notícias
     document.getElementById('aiAnalysis').textContent = resultado.ai_analysis || 'Análise não disponível';
     document.getElementById('newsContent').textContent = resultado.news_summary || 'Notícias não disponíveis';
     
+    // Recomendação geral
     const statusEl = document.getElementById('statusGeral');
     statusEl.textContent = resultado.recomendacao.emoji + ' ' + resultado.recomendacao.status;
     statusEl.className = 'recommendation-status ' + resultado.recomendacao.status.toLowerCase();
@@ -866,10 +870,12 @@ function renderizarResultado(resultado) {
     document.getElementById('pontosCompra').textContent = resultado.recomendacao.pontos_compra;
     document.getElementById('pontosVenda').textContent = resultado.recomendacao.pontos_venda;
     
+    // Métodos
     renderizarMetodo('bazin', resultado.bazin);
     renderizarMetodo('graham', resultado.graham);
     renderizarMetodo('lynch', resultado.lynch);
     
+    // Mostrar resultado
     document.getElementById('loadingDiv').style.display = 'none';
     document.getElementById('erroDiv').style.display = 'none';
     document.getElementById('conteudoResultado').style.display = 'block';
@@ -879,28 +885,46 @@ function renderizarResultado(resultado) {
 function renderizarMetodo(metodo, dados) {
     const card = document.getElementById(metodo + 'Card');
     const emojiEl = document.getElementById(metodo + 'Emoji');
-    const precoEl = document.getElementById(metodo + 'Preco');
-    const margemEl = document.getElementById(metodo + 'Margem');
     const statusEl = document.getElementById(metodo + 'Status');
     const formulaEl = document.getElementById(metodo + 'Formula');
     
+    if (!card || !emojiEl || !statusEl || !formulaEl) {
+        console.error(`Elementos não encontrados para método ${metodo}`);
+        return;
+    }
+    
     const statusLower = dados.status.toLowerCase();
+    
+    // Atualizar emoji e classe do card
     emojiEl.textContent = dados.emoji;
     card.className = 'method-card ' + statusLower;
     
+    // Atualizar preço/PEG específico
     if (metodo === 'lynch') {
-        document.getElementById('lynchPeg').textContent = dados.peg || 'N/A';
-        document.getElementById('lynchPreco').textContent = dados.preco_ideal || 'N/A';
+        const pegEl = document.getElementById('lynchPeg');
+        const precoIdealEl = document.getElementById('lynchPrecoIdeal');
+        if (pegEl) pegEl.textContent = dados.peg || 'N/A';
+        if (precoIdealEl) precoIdealEl.textContent = dados.preco_ideal || 'N/A';
     } else {
-        const chavePreco = metodo === 'bazin' ? 'preco_teto' : 'preco_justo';
-        precoEl.textContent = dados[chavePreco] || 'N/A';
+        const precoEl = document.getElementById(metodo + 'Preco');
+        if (precoEl) {
+            const chavePreco = metodo === 'bazin' ? 'preco_teto' : 'preco_justo';
+            precoEl.textContent = dados[chavePreco] || 'N/A';
+        }
     }
     
+    // Atualizar fórmula
     if (dados.formula) {
         formulaEl.innerHTML = '<i class="bi bi-calculator"></i> ' + dados.formula;
     }
     
-    margemEl.textContent = dados.margem || 'N/A';
+    // Atualizar margem
+    const margemEl = document.getElementById(metodo + 'Margem');
+    if (margemEl) {
+        margemEl.textContent = dados.margem || 'N/A';
+    }
+    
+    // Atualizar status
     statusEl.textContent = dados.emoji + ' ' + dados.status;
     statusEl.className = 'method-status ' + statusLower;
 }
@@ -922,6 +946,7 @@ function mostrarErro(mensagem) {
     document.getElementById('conteudoResultado').style.display = 'none';
 }
 
+// Fechar autocomplete ao clicar fora
 document.addEventListener('click', function(e) {
     if (e.target.id !== 'inputBusca') {
         document.getElementById('autocompleteList').classList.remove('active');

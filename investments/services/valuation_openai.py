@@ -1,81 +1,168 @@
 """
-Serviço de Valuation com OpenAI
-- Extrai dados do Investidor10
+Serviço de Valuation com Web Scraping OTIMIZADO
+- Scraping específico para estrutura do Investidor10
 - Análise IA especialista
 - Resumo de notícias
 """
 
 import os
 import json
+import requests
 from decimal import Decimal
 from openai import OpenAI
 from datetime import datetime, timedelta
 from decouple import config
+from bs4 import BeautifulSoup
+import re
 
 client = OpenAI(api_key=config('OPENAI_API_KEY'))
 
 
 def extrair_dados_investidor10(ticker: str):
-    """Extrai dados fundamentalistas do Investidor10 via OpenAI"""
+    """
+    Faz web scraping OTIMIZADO do Investidor10
+    Extrai dados fundamentalistas usando estrutura específica do site
+    """
     url = f"https://investidor10.com.br/acoes/{ticker.lower()}/"
     
-    prompt = f"""
-Acesse {url} e extraia:
-
-DADOS OBRIGATÓRIOS:
-- preco (cotação atual)
-- lpa (Lucro por Ação)
-- pl (P/L)
-- roe (ROE em %)
-- dy (Dividend Yield em %)
-- vpa (Valor Patrimonial)
-
-REGRAS:
-- Retorne APENAS JSON
-- Use null se não encontrar
-- Valores percentuais sem o símbolo %
-- Valores monetários em número decimal
-
-Ticker: {ticker.upper()}
-
-JSON:
-"""
-    
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "Você extrai dados do Investidor10. Retorne apenas JSON válido."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.1,
-            max_tokens=300
-        )
+        print(f"[SCRAPING] Acessando {url}...")
         
-        conteudo = response.choices[0].message.content.strip()
-        
-        if conteudo.startswith("```"):
-            conteudo = conteudo.split("```")[1]
-            if conteudo.startswith("json"):
-                conteudo = conteudo[4:]
-        
-        dados = json.loads(conteudo.strip())
-        
-        if not dados.get('preco') or not dados.get('lpa'):
-            return None
-        
-        return {
-            'ticker': ticker.upper(),
-            'preco': float(dados['preco']),
-            'lpa': float(dados['lpa']) if dados.get('lpa') else 0,
-            'pl': float(dados['pl']) if dados.get('pl') else 0,
-            'roe': float(dados['roe']) if dados.get('roe') else 0,
-            'dy': float(dados['dy']) if dados.get('dy') else 0,
-            'vpa': float(dados['vpa']) if dados.get('vpa') else 0,
+        # Headers para simular navegador
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Referer': 'https://www.google.com/',
         }
         
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            print(f"[ERRO] Status {response.status_code}")
+            return None
+        
+        # Parse HTML
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Dados a extrair
+        dados = {
+            'ticker': ticker.upper(),
+            'preco': 0,
+            'lpa': 0,
+            'pl': 0,
+            'roe': 0,
+            'dy': 0,
+            'vpa': 0,
+        }
+        
+        # ESTRATÉGIA: Passar TODO o HTML para a IA e pedir extração
+        # É mais confiável que tentar parsear estrutura que pode mudar
+        
+        print(f"[SCRAPING] HTML baixado, usando IA para extrair dados...")
+        
+        # Pegar texto completo da página
+        texto_pagina = soup.get_text(separator=' ', strip=True)
+        
+        # Limitar tamanho (GPT-4o aguenta ~128k tokens, mas vamos usar 10k caracteres)
+        texto_relevante = texto_pagina[:15000]
+        
+        # Prompt MUITO específico para extração
+        prompt = f"""
+Você é um extrator de dados financeiros. Analise este texto da página do Investidor10 sobre a ação {ticker.upper()}.
+
+TEXTO DA PÁGINA:
+{texto_relevante}
+
+Extraia APENAS os seguintes indicadores fundamentalistas (use os valores MAIS RECENTES que encontrar):
+
+1. PREÇO/COTAÇÃO atual em reais (procure por "Cotação", "Preço", valores com R$)
+2. LPA ou "Lucro por Ação" (em reais, pode estar como "L/A", "LPA", "Lucro p/ Ação")
+3. P/L ou "Preço sobre Lucro" (número decimal, pode estar como "P/L", "Preço/Lucro")
+4. ROE ou "Retorno sobre Patrimônio" (em %, pode estar como "ROE", "Return on Equity")
+5. DY ou "Dividend Yield" (em %, pode estar como "DY", "Div. Yield", "Dividendos")
+6. VPA ou "Valor Patrimonial por Ação" (em reais, pode estar como "VPA", "V.P.A", "Valor Patrimonial")
+
+REGRAS IMPORTANTES:
+- Retorne APENAS números (sem símbolos de % ou R$)
+- Se o ROE for 15%, retorne 15 (não 0.15)
+- Se o DY for 8%, retorne 8 (não 0.08)
+- Se não encontrar algum valor, use 0
+- Para preço, use o valor da cotação mais recente
+- Para indicadores, priorize valores anuais (12 meses)
+
+Retorne APENAS este JSON (sem markdown, sem explicação):
+{{"preco": 0, "lpa": 0, "pl": 0, "roe": 0, "dy": 0, "vpa": 0}}
+"""
+        
+        try:
+            response_ai = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "Você é um extrator de dados financeiros preciso. Retorne apenas JSON válido sem markdown."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.1,
+                max_tokens=300
+            )
+            
+            conteudo = response_ai.choices[0].message.content.strip()
+            
+            # Limpar markdown se vier
+            if conteudo.startswith("```"):
+                conteudo = conteudo.split("```")[1]
+                if conteudo.startswith("json"):
+                    conteudo = conteudo[4:]
+                conteudo = conteudo.strip()
+            
+            # Parse JSON
+            dados_extraidos = json.loads(conteudo)
+            
+            # Atualizar dados
+            for chave in ['preco', 'lpa', 'pl', 'roe', 'dy', 'vpa']:
+                if chave in dados_extraidos and dados_extraidos[chave]:
+                    dados[chave] = float(dados_extraidos[chave])
+            
+            print(f"[IA EXTRAÇÃO] ✅ Dados extraídos com sucesso")
+            
+            # Log dos dados
+            print(f"[DADOS] Preço: R$ {dados['preco']:.2f}")
+            print(f"[DADOS] LPA: R$ {dados['lpa']:.2f}")
+            print(f"[DADOS] P/L: {dados['pl']:.2f}")
+            print(f"[DADOS] ROE: {dados['roe']:.2f}%")
+            print(f"[DADOS] DY: {dados['dy']:.2f}%")
+            print(f"[DADOS] VPA: R$ {dados['vpa']:.2f}")
+            
+        except json.JSONDecodeError as e:
+            print(f"[ERRO JSON] {e}")
+            print(f"[RESPOSTA IA] {conteudo}")
+            return None
+        except Exception as e:
+            print(f"[ERRO IA] {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+        
+        # Validar dados mínimos
+        if dados['preco'] == 0 or dados['lpa'] == 0:
+            print(f"[ERRO] Dados insuficientes: preço={dados['preco']}, lpa={dados['lpa']}")
+            return None
+        
+        # Calcular P/L se não veio (mas temos preço e LPA)
+        if dados['pl'] == 0 and dados['preco'] > 0 and dados['lpa'] > 0:
+            dados['pl'] = dados['preco'] / dados['lpa']
+            print(f"[CALC] P/L calculado: {dados['pl']:.2f}")
+        
+        print(f"[OK] ✅ Dados completos extraídos!")
+        return dados
+        
+    except requests.Timeout:
+        print(f"[ERRO] Timeout ao acessar {url}")
+        return None
     except Exception as e:
         print(f"[ERRO] Extração: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -178,21 +265,26 @@ IMPORTANTE:
 def calcular_valuation(ticker: str):
     """
     Calcula valuation completo:
-    - Dados do Investidor10
+    - Web scraping + IA do Investidor10
     - 3 métodos (Bazin, Graham, Lynch)
     - Análise IA
     - Resumo de notícias
     """
     
-    # 1. Extrair dados
+    # 1. Extrair dados via web scraping + IA
+    print(f"[VALUATION] Iniciando análise de {ticker}...")
     dados = extrair_dados_investidor10(ticker)
+    
     if not dados:
+        print(f"[VALUATION] ❌ Falha ao extrair dados")
         return None
     
-    # 2. Gerar análise IA (paralelo)
+    # 2. Gerar análise IA
+    print(f"[VALUATION] Gerando análise IA...")
     ai_analysis = gerar_analise_ia(ticker, dados)
     
-    # 3. Buscar notícias (paralelo)
+    # 3. Buscar notícias
+    print(f"[VALUATION] Buscando notícias...")
     news_summary = buscar_noticias_resumo(ticker)
     
     # 4. Calcular métodos
@@ -301,6 +393,8 @@ def calcular_valuation(ticker: str):
             status_geral = "VENDER"
         else:
             status_geral = "AGUARDAR"
+    
+    print(f"[VALUATION] ✅ Análise completa!")
     
     # ===== RETORNO =====
     return {
