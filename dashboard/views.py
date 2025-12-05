@@ -1,10 +1,21 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.core.serializers.json import DjangoJSONEncoder
 from investments.models import Aporte, Lancamento, PlanejamentoMensal
 from datetime import datetime
 from decimal import Decimal
 from collections import defaultdict
 import requests
+import json
+
+
+class DecimalEncoder(DjangoJSONEncoder):
+    """Encoder que converte Decimal para float para JSON"""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
+
 
 @login_required
 def dashboard(request):
@@ -123,10 +134,11 @@ def dashboard(request):
         ultimos_items = ultimos_items[:10]
 
         context = {
-            "historico_acumulado": historico_acumulado,
-            "projecao_conservador": projecao_conservador,
-            "projecao_moderado": projecao_moderado,
-            "projecao_agressivo": projecao_agressivo,
+            # ✅ CORRIGIDO: Usar json.dumps() com DecimalEncoder
+            "historico_acumulado": json.dumps(historico_acumulado, cls=DecimalEncoder),
+            "projecao_conservador": json.dumps(projecao_conservador, cls=DecimalEncoder),
+            "projecao_moderado": json.dumps(projecao_moderado, cls=DecimalEncoder),
+            "projecao_agressivo": json.dumps(projecao_agressivo, cls=DecimalEncoder),
             "total": round(total_investido, 2),
             "qtd_aportes": qtd_aportes,
             "media_mensal": round(media_mensal, 2),
@@ -143,14 +155,15 @@ def dashboard(request):
             "total_mercado_carteira": round(total_mercado_carteira, 2),
             "lucro_total": round(lucro_total, 2),
             "rentabilidade": round(rentabilidade, 2),
-            "diversificacao": diversificacao,
+            # ✅ CORRIGIDO: Usar json.dumps() com DecimalEncoder
+            "diversificacao": json.dumps(diversificacao, cls=DecimalEncoder),
         }
     else:
         context = {
-            "historico_acumulado": [],
-            "projecao_conservador": [],
-            "projecao_moderado": [],
-            "projecao_agressivo": [],
+            "historico_acumulado": json.dumps([], cls=DecimalEncoder),
+            "projecao_conservador": json.dumps([], cls=DecimalEncoder),
+            "projecao_moderado": json.dumps([], cls=DecimalEncoder),
+            "projecao_agressivo": json.dumps([], cls=DecimalEncoder),
             "total": 0,
             "qtd_aportes": 0,
             "media_mensal": 0,
@@ -167,7 +180,7 @@ def dashboard(request):
             "total_mercado_carteira": 0,
             "lucro_total": 0,
             "rentabilidade": 0,
-            "diversificacao": {},
+            "diversificacao": json.dumps({}, cls=DecimalEncoder),
         }
 
     return render(request, "dashboard/home.html", context)

@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.views.decorators.http import require_http_methods
 from investments.services.valuation_openai import calcular_valuation
 
+
 @login_required
 def adicionar_aporte(request):
     aportes = Aporte.objects.filter(usuario=request.user).order_by("data")
@@ -36,6 +37,7 @@ def adicionar_aporte(request):
         'proximo_valor': proximo_valor
     })
 
+
 @login_required
 def editar_aporte(request, pk):
     aporte = get_object_or_404(Aporte, pk=pk, usuario=request.user)
@@ -51,6 +53,7 @@ def editar_aporte(request, pk):
     
     return render(request, 'investments/editar.html', {'form': form, 'aporte': aporte})
 
+
 @login_required
 def deletar_aporte(request, pk):
     aporte = get_object_or_404(Aporte, pk=pk, usuario=request.user)
@@ -62,6 +65,47 @@ def deletar_aporte(request, pk):
         return redirect('dashboard')
     
     return render(request, 'investments/deletar.html', {'aporte': aporte})
+
+
+@login_required
+def editar_lancamento(request, pk):
+    """Editar lançamento existente"""
+    lancamento = get_object_or_404(Lancamento, pk=pk, usuario=request.user)
+    
+    if request.method == 'POST':
+        try:
+            lancamento.quantidade = Decimal(str(request.POST.get('quantidade', 0)))
+            lancamento.preco = Decimal(str(request.POST.get('preco', 0)))
+            lancamento.custos = Decimal(str(request.POST.get('custos', 0)))
+            lancamento.total = (lancamento.quantidade * lancamento.preco) + lancamento.custos
+            lancamento.data = request.POST.get('data')
+            lancamento.nome_ativo = request.POST.get('nome_ativo', lancamento.nome_ativo)
+            lancamento.save()
+            messages.success(request, 'Lançamento atualizado! ✅')
+            return redirect('dashboard')
+        except Exception as e:
+            messages.error(request, f'Erro ao atualizar: {str(e)}')
+    
+    return render(request, 'investments/editar_lancamento.html', {
+        'lancamento': lancamento
+    })
+
+
+@login_required
+def deletar_lancamento(request, pk):
+    """Deletar lançamento"""
+    lancamento = get_object_or_404(Lancamento, pk=pk, usuario=request.user)
+    
+    if request.method == 'POST':
+        nome = lancamento.nome_ativo
+        lancamento.delete()
+        messages.success(request, f'Lançamento "{nome}" removido! 🗑️')
+        return redirect('dashboard')
+    
+    return render(request, 'investments/deletar_lancamento.html', {
+        'lancamento': lancamento
+    })
+
 
 @login_required
 def buscar_ativos_api(request):
@@ -128,6 +172,7 @@ def buscar_ativos_api(request):
     
     return JsonResponse({'resultados': resultados[:15]})
 
+
 @login_required
 def buscar_cotacao_api(request):
     """Busca cotação via yfinance"""
@@ -162,6 +207,7 @@ def buscar_cotacao_api(request):
     except Exception as e:
         print(f"[ERRO] Buscar cotação: {e}")
         return JsonResponse({'erro': str(e), 'preco': 0}, status=500)
+
 
 @login_required
 def salvar_lancamentos(request):
@@ -215,6 +261,7 @@ def salvar_lancamentos(request):
         print(f"[ERRO] Salvar lançamentos: {e}")
         return JsonResponse({'erro': str(e)}, status=500)
 
+
 @login_required
 @require_http_methods(["GET"])
 def buscar_acoes_valuation_api(request):
@@ -264,6 +311,7 @@ def buscar_acoes_valuation_api(request):
     
     return JsonResponse({'resultados': resultados[:15]})
 
+
 @login_required
 @require_http_methods(["GET"])
 def calcular_valuation_api(request):
@@ -296,6 +344,7 @@ def calcular_valuation_api(request):
             'detalhes': str(e)
         }, status=500)
 
+
 @login_required
 def valuation_page(request):
     """Página de análise de valuation"""
@@ -303,9 +352,7 @@ def valuation_page(request):
         'page_title': 'Análise de Valuation'
     })
 
-# ============================================================================
-# VIEW DE PLANEJAMENTO MENSAL - CORRIGIDA!
-# ============================================================================
+
 @login_required
 def configurar_planejamento(request):
     """Criar ou editar planejamento mensal"""
@@ -315,28 +362,28 @@ def configurar_planejamento(request):
         planejamento = None
     
     if request.method == 'POST':
-        valor_planejado = request.POST.get('valor_planejado')
+        valor_planejado = request.POST.get('valor_planejado', '').strip()
         
         if valor_planejado:
             try:
-                valor_planejado = Decimal(valor_planejado)
+                valor_decimal = Decimal(valor_planejado.replace(',', '.'))
                 
                 if planejamento:
                     # Atualizar existente
-                    planejamento.valor_planejado = valor_planejado
+                    planejamento.valor_planejado = valor_decimal
                     planejamento.save()
                     messages.success(request, 'Planejamento atualizado com sucesso! ✅')
                 else:
                     # Criar novo
                     PlanejamentoMensal.objects.create(
                         usuario=request.user,
-                        valor_planejado=valor_planejado
+                        valor_planejado=valor_decimal
                     )
                     messages.success(request, 'Planejamento criado com sucesso! 🎉')
                 
                 return redirect('dashboard')
             except Exception as e:
-                messages.error(request, f'Erro ao salvar planejamento: {e}')
+                messages.error(request, f'Valor inválido. Use formato 500.00')
         else:
             messages.error(request, 'Por favor, informe o valor planejado.')
     

@@ -860,11 +860,17 @@
 
 {% block extra_js %}
 <script>
-// Dados do backend
+// ✅ CORRIGIDO: Dados do backend com validação
 const historico = {{ historico_acumulado|safe }};
 const projecaoConservador = {{ projecao_conservador|safe }};
 const projecaoModerado = {{ projecao_moderado|safe }};
 const projecaoAgressivo = {{ projecao_agressivo|safe }};
+
+// ✅ CORRIGIDO: Validar se dados existem e são arrays
+if (!Array.isArray(historico)) historico = [];
+if (!Array.isArray(projecaoConservador)) projecaoConservador = [];
+if (!Array.isArray(projecaoModerado)) projecaoModerado = [];
+if (!Array.isArray(projecaoAgressivo)) projecaoAgressivo = [];
 
 const mesesHistorico = historico.length;
 const mesesProjecao = projecaoConservador.length;
@@ -886,223 +892,229 @@ const dataAgressivo = Array(mesesHistorico).fill(null).concat(projecaoAgressivo)
 const ctxLinha = document.getElementById('graficoLinha');
 const isMobile = window.innerWidth < 768;
 
-new Chart(ctxLinha, {
-    type: 'line',
-    data: {
-        labels: labels,
-        datasets: [
-            {
-                label: isMobile ? '💰 Acumulado' : '💰 Patrimônio Acumulado',
-                data: dataHistorico,
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                borderWidth: 3,
-                tension: 0.3,
-                fill: true,
-                pointRadius: isMobile ? 0 : 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#10b981',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-            },
-            {
-                label: isMobile ? '🟢 8%' : '🟢 Conservador (8% a.a.)',
-                data: dataConservador,
-                borderColor: '#22c55e',
-                borderWidth: 2,
-                borderDash: [10, 5],
-                tension: 0.4,
-                fill: false,
-                pointRadius: 0,
-            },
-            {
-                label: isMobile ? '🟡 12%' : '🟡 Moderado (12% a.a.)',
-                data: dataModerado,
-                borderColor: '#eab308',
-                borderWidth: 2,
-                borderDash: [10, 5],
-                tension: 0.4,
-                fill: false,
-                pointRadius: 0,
-            },
-            {
-                label: isMobile ? '🔴 14%' : '🔴 Agressivo (14% a.a.)',
-                data: dataAgressivo,
-                borderColor: '#ef4444',
-                borderWidth: 2,
-                borderDash: [10, 5],
-                tension: 0.4,
-                fill: false,
-                pointRadius: 0,
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: true,
-                position: 'top',
-                labels: {
-                    usePointStyle: true,
-                    padding: isMobile ? 10 : 15,
-                    font: { size: isMobile ? 10 : 12, weight: '600' }
+// ✅ CORRIGIDO: Validar se elemento existe E se temos dados
+if (ctxLinha && historico.length > 0) {
+    new Chart(ctxLinha, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: isMobile ? '💰 Acumulado' : '💰 Patrimônio Acumulado',
+                    data: dataHistorico,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: isMobile ? 0 : 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#2563eb',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                },
+                {
+                    label: isMobile ? '🟢 8%' : '🟢 Conservador (8% a.a.)',
+                    data: dataConservador,
+                    borderColor: '#10b981',
+                    borderWidth: 2,
+                    borderDash: [10, 5],
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 0,
+                },
+                {
+                    label: isMobile ? '🟡 12%' : '🟡 Moderado (12% a.a.)',
+                    data: dataModerado,
+                    borderColor: '#f59e0b',
+                    borderWidth: 2,
+                    borderDash: [10, 5],
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 0,
+                },
+                {
+                    label: isMobile ? '🔴 14%' : '🔴 Agressivo (14% a.a.)',
+                    data: dataAgressivo,
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    borderDash: [10, 5],
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 0,
                 }
-            },
-            tooltip: {
-                mode: 'index',
-                intersect: false,
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                padding: 12,
-                cornerRadius: 8,
-            }
+            ]
         },
-        scales: {
-            x: {
-                grid: { display: false },
-                ticks: {
-                    maxRotation: 0,
-                    autoSkip: true,
-                    maxTicksLimit: isMobile ? 6 : 12,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: isMobile ? 10 : 15,
+                        font: { size: isMobile ? 10 : 12, weight: '600' }
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
                 }
             },
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                ticks: {
-                    callback: function(value) {
-                        if (value >= 1000000) return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
-                        if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
-                        return 'R$ ' + value.toFixed(0);
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: isMobile ? 6 : 12,
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: {
+                        callback: function(value) {
+                            if (value >= 1000000) return 'R$ ' + (value / 1000000).toFixed(1) + 'M';
+                            if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                            return 'R$ ' + value.toFixed(0);
+                        }
                     }
                 }
             }
         }
-    }
-});
+    });
+}
 
 // =============================================================================
 // GRÁFICO DE BARRAS - Patrimônio por Mês
 // =============================================================================
 const ctxBarras = document.getElementById('graficoBarras');
 
-// Pegar últimos 12 meses ou o que tiver
-const ultimosMeses = historico.slice(-12);
-const labelsBarras = ultimosMeses.map((v, i) => `Mês ${historico.length - ultimosMeses.length + i + 1}`);
+// ✅ CORRIGIDO: Validar elemento e dados
+if (ctxBarras && historico.length > 0) {
+    const ultimosMeses = historico.slice(-12);
+    const labelsBarras = ultimosMeses.map((v, i) => `Mês ${historico.length - ultimosMeses.length + i + 1}`);
 
-new Chart(ctxBarras, {
-    type: 'bar',
-    data: {
-        labels: labelsBarras,
-        datasets: [{
-            label: 'Patrimônio Acumulado',
-            data: ultimosMeses,
-            backgroundColor: 'rgba(37, 99, 235, 0.8)',
-            borderColor: '#2563eb',
-            borderWidth: 2,
-            borderRadius: 8,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                padding: 12,
-                cornerRadius: 8,
-                callbacks: {
-                    label: function(context) {
-                        return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
+    new Chart(ctxBarras, {
+        type: 'bar',
+        data: {
+            labels: labelsBarras,
+            datasets: [{
+                label: 'Patrimônio Acumulado',
+                data: ultimosMeses,
+                backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                borderColor: '#2563eb',
+                borderWidth: 2,
+                borderRadius: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return 'R$ ' + context.parsed.y.toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                        }
                     }
                 }
-            }
-        },
-        scales: {
-            x: {
-                grid: { display: false }
             },
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(0, 0, 0, 0.05)' },
-                ticks: {
-                    callback: function(value) {
-                        if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
-                        return 'R$ ' + value.toFixed(0);
+            scales: {
+                x: {
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: {
+                        callback: function(value) {
+                            if (value >= 1000) return 'R$ ' + (value / 1000).toFixed(0) + 'k';
+                            return 'R$ ' + value.toFixed(0);
+                        }
                     }
                 }
             }
         }
-    }
-});
+    });
+}
 
 // =============================================================================
 // GRÁFICO DE ROSCA - Diversificação
 // =============================================================================
 {% if diversificacao %}
 const ctxRosca = document.getElementById('graficoRosca');
-const diversificacaoData = {
-    {% for tipo, data in diversificacao.items %}
-    "{{ tipo }}": {{ data.percentual }},
-    {% endfor %}
-};
+const diversificacaoData = {{ diversificacao|safe }};
 
-const labelsDiversificacao = [];
-const valoresDiversificacao = [];
-const coresGrafico = [
-    '#2563eb', '#10b981', '#f59e0b', '#8b5cf6', 
-    '#ec4899', '#14b8a6', '#06b6d4', '#84cc16'
-];
+// ✅ CORRIGIDO: Validar elemento e dados
+if (ctxRosca && Object.keys(diversificacaoData).length > 0) {
+    const labelsDiversificacao = [];
+    const valoresDiversificacao = [];
+    const coresGrafico = [
+        '#2563eb', '#10b981', '#f59e0b', '#8b5cf6', 
+        '#ec4899', '#14b8a6', '#06b6d4', '#84cc16'
+    ];
 
-for (const tipo in diversificacaoData) {
-    labelsDiversificacao.push(tipo);
-    valoresDiversificacao.push(diversificacaoData[tipo]);
-}
+    let colorIndex = 0;
+    for (const tipo in diversificacaoData) {
+        labelsDiversificacao.push(tipo);
+        valoresDiversificacao.push(diversificacaoData[tipo].percentual);
+        colorIndex++;
+    }
 
-new Chart(ctxRosca, {
-    type: 'doughnut',
-    data: {
-        labels: labelsDiversificacao,
-        datasets: [{
-            data: valoresDiversificacao,
-            backgroundColor: coresGrafico,
-            borderWidth: 3,
-            borderColor: '#fff',
-            hoverOffset: 10
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    padding: 15,
-                    font: { size: isMobile ? 10 : 12, weight: '600' },
-                    usePointStyle: true
-                }
-            },
-            tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                padding: 12,
-                cornerRadius: 8,
-                callbacks: {
-                    label: function(context) {
-                        const label = context.label || '';
-                        const value = context.parsed || 0;
-                        return label + ': ' + value.toFixed(1) + '%';
+    new Chart(ctxRosca, {
+        type: 'doughnut',
+        data: {
+            labels: labelsDiversificacao,
+            datasets: [{
+                data: valoresDiversificacao,
+                backgroundColor: coresGrafico.slice(0, colorIndex),
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        font: { size: isMobile ? 10 : 12, weight: '600' },
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            return label + ': ' + value.toFixed(1) + '%';
+                        }
                     }
                 }
             }
         }
-    }
-});
+    });
+}
 {% endif %}
 </script>
 {% endblock %}

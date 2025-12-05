@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Deletar Aporte - RUMO1M{% endblock %}
+{% block title %}Deletar Lançamento - RUMO1M{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -53,7 +53,7 @@
         font-size: 1.0625rem;
     }
     
-    .aporte-preview {
+    .lancamento-preview {
         background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
         border-radius: var(--radius-xl);
         padding: 1.5rem;
@@ -61,7 +61,7 @@
         border: 2px solid rgba(239, 68, 68, 0.2);
     }
     
-    .aporte-valor {
+    .lancamento-valor {
         font-size: 2rem;
         font-weight: 800;
         color: var(--danger);
@@ -69,7 +69,7 @@
         margin-bottom: 0.5rem;
     }
     
-    .aporte-data {
+    .lancamento-info {
         color: var(--gray-600);
         font-size: 0.9375rem;
     }
@@ -118,7 +118,7 @@
     @media (max-width: 767px) {
         .page-header h1 { font-size: 2rem; }
         .warning-icon { font-size: 3.5rem; }
-        .aporte-valor { font-size: 1.5rem; }
+        .lancamento-valor { font-size: 1.5rem; }
     }
 </style>
 {% endblock %}
@@ -134,16 +134,17 @@
         <i class="bi bi-exclamation-triangle-fill"></i>
     </div>
     
-    <h2>Tem certeza que deseja excluir este aporte?</h2>
+    <h2>Tem certeza que deseja deletar este lançamento?</h2>
     <p>Esta ação não pode ser desfeita.</p>
     
-    <div class="aporte-preview">
-        <div class="aporte-valor">R$ {{ aporte.valor|floatformat:2 }}</div>
-        <div class="aporte-data">
-            {{ aporte.data|date:"d/m/Y" }}
-            {% if aporte.descricao %}
-            <br><span style="font-weight: 500;">{{ aporte.descricao }}</span>
-            {% endif %}
+    <div class="lancamento-preview">
+        <div class="lancamento-valor">{{ lancamento.tipo_operacao }} - R$ {{ lancamento.total|floatformat:2 }}</div>
+        <div class="lancamento-info">
+            <strong>{{ lancamento.nome_ativo }}</strong>
+            <br>
+            Quantidade: {{ lancamento.quantidade|floatformat:2 }} x R$ {{ lancamento.preco|floatformat:2 }}
+            <br>
+            Data: {{ lancamento.data|date:"d/m/Y" }}
         </div>
     </div>
     
@@ -152,7 +153,7 @@
         <div class="btn-group">
             <button type="submit" class="btn btn-danger">
                 <i class="bi bi-trash"></i>
-                Sim, Excluir Definitivamente
+                Sim, Deletar Definitivamente
             </button>
             <a href="{% url 'dashboard' %}" class="btn btn-secondary">
                 <i class="bi bi-x-lg"></i>

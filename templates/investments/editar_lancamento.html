@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Editar Aporte - RUMO1M{% endblock %}
+{% block title %}Editar Lançamento - RUMO1M{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -133,6 +133,21 @@
         gap: 1rem;
     }
     
+    .info-card {
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+        border-left: 4px solid var(--primary);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        color: var(--primary-dark);
+    }
+    
+    .info-card strong {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
     @media (max-width: 767px) {
         .page-header h1 { font-size: 2rem; }
     }
@@ -142,55 +157,92 @@
 {% block content %}
 
 <div class="page-header">
-    <h1>✏️ Editar Aporte</h1>
+    <h1>✏️ Editar Lançamento</h1>
 </div>
 
 <div class="form-card">
     <h2>
         <i class="bi bi-pencil-square"></i>
-        Editar Aporte
+        Editar Lançamento
     </h2>
+    
+    <div class="info-card">
+        <strong>
+            <i class="bi bi-info-circle"></i>
+            {{ lancamento.tipo_operacao }} - {{ lancamento.nome_ativo }}
+        </strong>
+        <div style="margin-top: 0.5rem; font-size: 0.875rem;">
+            Data: {{ lancamento.data|date:"d/m/Y" }} | Tipo: {{ lancamento.get_tipo_ativo_display }}
+        </div>
+    </div>
     
     <form method="post">
         {% csrf_token %}
         
         <div class="form-group">
-            <label for="{{ form.data.id_for_label }}" class="form-label">
-                {{ form.data.label }}
-            </label>
-            {{ form.data }}
-            {% if form.data.errors %}
-                <div style="color: var(--danger); margin-top: 0.5rem; font-size: 0.875rem;">
-                    {{ form.data.errors }}
-                </div>
-            {% endif %}
+            <label for="data" class="form-label">Data</label>
+            <input 
+                type="date" 
+                name="data" 
+                id="data"
+                class="form-control"
+                value="{{ lancamento.data|date:'Y-m-d' }}"
+                required>
         </div>
         
         <div class="form-group">
-            <label for="{{ form.valor.id_for_label }}" class="form-label">
-                {{ form.valor.label }}
-            </label>
+            <label for="nome_ativo" class="form-label">Nome do Ativo</label>
+            <input 
+                type="text" 
+                name="nome_ativo" 
+                id="nome_ativo"
+                class="form-control"
+                value="{{ lancamento.nome_ativo }}"
+                required>
+        </div>
+        
+        <div class="form-group">
+            <label for="quantidade" class="form-label">Quantidade</label>
+            <input 
+                type="number" 
+                name="quantidade" 
+                id="quantidade"
+                class="form-control"
+                step="0.01"
+                min="0"
+                value="{{ lancamento.quantidade|floatformat:2 }}"
+                required>
+        </div>
+        
+        <div class="form-group">
+            <label for="preco" class="form-label">Preço (R$)</label>
             <div class="input-group">
                 <span class="input-group-text">R$</span>
-                {{ form.valor }}
+                <input 
+                    type="number" 
+                    name="preco" 
+                    id="preco"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ lancamento.preco|floatformat:2 }}"
+                    required>
             </div>
-            {% if form.valor.errors %}
-                <div style="color: var(--danger); margin-top: 0.5rem; font-size: 0.875rem;">
-                    {{ form.valor.errors }}
-                </div>
-            {% endif %}
         </div>
         
         <div class="form-group">
-            <label for="{{ form.descricao.id_for_label }}" class="form-label">
-                {{ form.descricao.label }}
-            </label>
-            {{ form.descricao }}
-            {% if form.descricao.errors %}
-                <div style="color: var(--danger); margin-top: 0.5rem; font-size: 0.875rem;">
-                    {{ form.descricao.errors }}
-                </div>
-            {% endif %}
+            <label for="custos" class="form-label">Outros Custos (R$)</label>
+            <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input 
+                    type="number" 
+                    name="custos" 
+                    id="custos"
+                    class="form-control"
+                    step="0.01"
+                    min="0"
+                    value="{{ lancamento.custos|floatformat:2 }}">
+            </div>
         </div>
         
         <div class="btn-group">
