@@ -6,6 +6,7 @@ from .models import Aporte, Lancamento, PlanejamentoMensal
 from .forms import AporteForm
 from decimal import Decimal
 from django.views.decorators.http import require_http_methods
+import requests
 
 
 @login_required
@@ -108,73 +109,57 @@ def deletar_lancamento(request, pk):
 
 @login_required
 def buscar_ativos_api(request):
-    """Busca ativos - LISTA ESTÁTICA (sem necessidade de API externa)"""
+    """
+    Busca ativos APENAS na API brapi.dev (suporta Ações e FIIs)
+    Se API falhar, retorna vazio - sem fallback
+    """
     query = request.GET.get('q', '').strip().upper()
-    tipo_ativo = request.GET.get('tipo', 'ACOES')
     
     if len(query) < 2:
         return JsonResponse({'resultados': []})
     
-    # Lista estática das principais ações brasileiras
-    acoes_brasileiras = [
-        ('PETR3', 'Petrobras ON'),
-        ('PETR4', 'Petrobras PN'),
-        ('VALE3', 'Vale ON'),
-        ('ITUB3', 'Itaú Unibanco ON'),
-        ('ITUB4', 'Itaú Unibanco PN'),
-        ('BBDC3', 'Bradesco ON'),
-        ('BBDC4', 'Bradesco PN'),
-        ('BBAS3', 'Banco do Brasil ON'),
-        ('ABEV3', 'Ambev ON'),
-        ('B3SA3', 'B3 ON'),
-        ('WEGE3', 'WEG ON'),
-        ('RENT3', 'Localiza ON'),
-        ('RAIL3', 'Rumo ON'),
-        ('SUZB3', 'Suzano ON'),
-        ('JBSS3', 'JBS ON'),
-        ('MGLU3', 'Magazine Luiza ON'),
-        ('LREN3', 'Lojas Renner ON'),
-        ('GGBR4', 'Gerdau PN'),
-        ('USIM5', 'Usiminas PNA'),
-        ('CSNA3', 'CSN ON'),
-        ('EMBR3', 'Embraer ON'),
-        ('RADL3', 'Raia Drogasil ON'),
-        ('HAPV3', 'Hapvida ON'),
-        ('VIVT3', 'Telefônica Brasil ON'),
-        ('ELET3', 'Eletrobras ON'),
-        ('ELET6', 'Eletrobras PNB'),
-        ('CMIG4', 'Cemig PN'),
-        ('ENBR3', 'Energias BR ON'),
-        ('ENGI11', 'Energisa UNT'),
-        ('TAEE11', 'Taesa UNT'),
-        ('CPLE6', 'Copel PNB'),
-        ('SANB11', 'Santander BR UNT'),
-        ('BPAC11', 'BTG Pactual UNT'),
-        ('FLRY3', 'Fleury ON'),
-        ('PRIO3', 'Prio ON'),
-        ('RECV3', 'PetroReconcavo ON'),
-        ('KLBN11', 'Klabin UNT'),
-        ('CSAN3', 'Cosan ON'),
-        ('RAIZ4', 'Raízen PN'),
-        ('EQTL3', 'Equatorial ON'),
-        ('SBSP3', 'Sabesp ON'),
-    ]
+    try:
+        url = f"https://brapi.dev/api/quote/list?search={query}"
+        response = requests.get(url, timeout=3)
+        
+        if response.ok:
+            data = response.json()
+            stocks = data.get('stocks', [])
+            
+            resultados = []
+            for stock in stocks[:15]:
+                ticker = stock.get('stock', '')
+                nome = stock.get('name', ticker)
+                
+                # FIIs terminam em 11 (HGLG11, MXRF11)
+                # Ações terminam em 3, 4, 5, 6 (PETR3, VALE3)
+                tipo = 'fii' if ticker.endswith('11') else 'stock'
+                
+                resultados.append({
+                    'ticker': ticker,
+                    'nome': nome,
+                    'tipo': tipo
+                })
+            
+            return JsonResponse({'resultados': resultados})
     
-    resultados = []
-    for ticker, nome in acoes_brasileiras:
-        if query in ticker or query in nome.upper():
-            resultados.append({
-                'ticker': ticker,
-                'nome': nome,
-                'tipo': 'stock'
-            })
+    except Exception as e:
+        print(f"[ERRO] Busca API: {e}")
     
-    return JsonResponse({'resultados': resultados[:15]})
+    # Se API falhar, retorna vazio
+    return JsonResponse({'resultados': []})
 
 
 @login_required
 def buscar_cotacao_api(request):
-    """Busca cotação via yfinance"""
+    """
+    Busca cotação via yfinance
+    
+    ENSINO: Por que yfinance e não brapi.dev?
+    - yfinance é mais confiável para cotações em tempo real
+    - Suporta tanto ações quanto FIIs
+    - Fallback automático se cotação não disponível
+    """
     import yfinance as yf
     
     ticker = request.GET.get('ticker', '').strip().upper()
@@ -183,6 +168,7 @@ def buscar_cotacao_api(request):
         return JsonResponse({'erro': 'Ticker não informado'}, status=400)
     
     try:
+        # Adicionar sufixo .SA se não tiver
         if not ticker.endswith('.SA'):
             ticker = f"{ticker}.SA"
         
@@ -264,51 +250,43 @@ def salvar_lancamentos(request):
 @login_required
 @require_http_methods(["GET"])
 def buscar_acoes_valuation_api(request):
-    """API para autocomplete - lista estática"""
+    """
+    API para autocomplete na página de valuation
+    Busca APENAS na API - sem fallback
+    """
     query = request.GET.get('q', '').strip().upper()
     
     if len(query) < 1:
         return JsonResponse({'resultados': []})
     
-    # Principais ações brasileiras
-    acoes = [
-        ('PETR3', 'Petrobras ON'),
-        ('PETR4', 'Petrobras PN'),
-        ('VALE3', 'Vale ON'),
-        ('ITUB3', 'Itaú Unibanco ON'),
-        ('ITUB4', 'Itaú Unibanco PN'),
-        ('BBDC3', 'Bradesco ON'),
-        ('BBDC4', 'Bradesco PN'),
-        ('BBAS3', 'Banco do Brasil ON'),
-        ('ABEV3', 'Ambev ON'),
-        ('B3SA3', 'B3 ON'),
-        ('WEGE3', 'WEG ON'),
-        ('RENT3', 'Localiza ON'),
-        ('RAIL3', 'Rumo ON'),
-        ('SUZB3', 'Suzano ON'),
-        ('MGLU3', 'Magazine Luiza ON'),
-        ('LREN3', 'Lojas Renner ON'),
-        ('GGBR4', 'Gerdau PN'),
-        ('USIM5', 'Usiminas PNA'),
-        ('CSNA3', 'CSN ON'),
-        ('ELET3', 'Eletrobras ON'),
-        ('CMIG4', 'Cemig PN'),
-        ('ENBR3', 'Energias BR ON'),
-        ('SANB11', 'Santander BR UNT'),
-        ('BPAC11', 'BTG Pactual UNT'),
-        ('PRIO3', 'Prio ON'),
-    ]
+    try:
+        url = f"https://brapi.dev/api/quote/list?search={query}"
+        response = requests.get(url, timeout=3)
+        
+        if response.ok:
+            data = response.json()
+            stocks = data.get('stocks', [])
+            
+            resultados = []
+            for stock in stocks[:15]:
+                ticker = stock.get('stock', '')
+                nome = stock.get('name', ticker)
+                
+                # Para valuation, filtrar apenas ações (não FIIs)
+                if not ticker.endswith('11'):
+                    resultados.append({
+                        'ticker': ticker,
+                        'nome': nome,
+                        'label': f"{ticker} - {nome}"
+                    })
+            
+            return JsonResponse({'resultados': resultados})
     
-    resultados = []
-    for ticker, nome in acoes:
-        if query in ticker or query in nome.upper():
-            resultados.append({
-                'ticker': ticker,
-                'nome': nome,
-                'label': f"{ticker} - {nome}"
-            })
+    except Exception as e:
+        print(f"[ERRO] Busca valuation: {e}")
     
-    return JsonResponse({'resultados': resultados[:15]})
+    # Se API falhar, retorna vazio
+    return JsonResponse({'resultados': []})
 
 
 @login_required
